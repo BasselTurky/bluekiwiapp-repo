@@ -57,6 +57,7 @@ const createAccountLimiter = rateLimit({
 
 const transporter = nodemailer.createTransport({
   // service: "Hotmail",
+  name: "smtp-mail.outlook.com",
   host: "smtp-mail.outlook.com",
   // port: 587,
   auth: {

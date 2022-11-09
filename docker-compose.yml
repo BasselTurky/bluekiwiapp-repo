@@ -32,6 +32,7 @@ services:
       - JWT_SECRET=6708294
       - TRANSPORTER_EMAIL_PASS=Bb6708294
       - SERVER_EMAIL=invite.me.application@hotmail.com
+      - SMTP_NAME=bluekiwiapp.com
     ports:
       - "3000:3000"
     depends_on:
@@ -53,6 +54,7 @@ services:
       - JWT_SECRET=6708294
       - TRANSPORTER_EMAIL_PASS=Bb6708294
       - SERVER_EMAIL=invite.me.application@hotmail.com
+      - SMTP_NAME=bluekiwiapp.com
     ports:
       - "3001:3001"
     depends_on:
@@ -74,6 +76,7 @@ services:
       - JWT_SECRET=6708294
       - TRANSPORTER_EMAIL_PASS=Bb6708294
       - SERVER_EMAIL=invite.me.application@hotmail.com
+      - SMTP_NAME=bluekiwiapp.com
     ports:
       - "3002:3002"
     depends_on:
