@@ -23,8 +23,9 @@ services:
   node-api-A:
     image: node_api_image
     container_name: nodeApiA-con
+    network_mode: host
     environment:
-      - DB_HOST=host.docker.internal
+      - DB_HOST=localhost
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
       - DB_NAME=bluedb
@@ -45,8 +46,9 @@ services:
   node-api-B:
     image: node_api_image
     container_name: nodeApiB-con
+    network_mode: host
     environment:
-      - DB_HOST=host.docker.internal
+      - DB_HOST=localhost
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
       - DB_NAME=bluedb
@@ -67,8 +69,9 @@ services:
   node-auth:
     image: node_auth_image
     container_name: nodeAuth-con
+    network_mode: host
     environment:
-      - DB_HOST=host.docker.internal
+      - DB_HOST=localhost
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
       - DB_NAME=bluedb
@@ -85,8 +88,7 @@ services:
     # networks:
     #   - internalnet
     restart: unless-stopped
-
-volumes:
-  db:
+# volumes:
+#   db:
 # networks:
 #   internalnet:
