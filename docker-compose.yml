@@ -25,7 +25,7 @@ services:
     container_name: nodeApiA-con
     network_mode: host
     environment:
-      - DB_HOST=host.docker.internal
+      - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
       - DB_NAME=bluedb
@@ -48,7 +48,7 @@ services:
     container_name: nodeApiB-con
     network_mode: host
     environment:
-      - DB_HOST=host.docker.internal
+      - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
       - DB_NAME=bluedb
@@ -71,7 +71,7 @@ services:
     container_name: nodeAuth-con
     network_mode: host
     environment:
-      - DB_HOST=host.docker.internal
+      - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
       - DB_NAME=bluedb
