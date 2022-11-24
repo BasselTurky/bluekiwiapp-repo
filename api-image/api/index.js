@@ -275,30 +275,32 @@ async function check_device_id(email, device_id) {
 
 async function check_device_id_from_token(token) {
   try {
-    jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
-      if (err) {
-        return { boolean: false };
-      }
+    let decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // , async (err, decoded) => {
+    // if (err) {
+    //   return { boolean: false };
+    // }
 
-      let email = decoded.email;
-      let device_id = decoded.device_id;
+    let email = decoded.email;
+    let device_id = decoded.device_id;
 
-      const db_device_id_query = await pool.query(
-        `SELECT * FROM users WHERE email='${email}'`
-      );
+    const db_device_id_query = await pool.query(
+      `SELECT * FROM users WHERE email ='${email}'`
+    );
 
-      const results = Object.values(
-        JSON.parse(JSON.stringify(db_device_id_query))
-      );
+    const results = Object.values(
+      JSON.parse(JSON.stringify(db_device_id_query))
+    );
 
-      const db_device_id = results[0].device_id;
+    const db_device_id = results[0].device_id;
 
-      if (device_id === db_device_id) {
-        return { boolean: true, email: email, device_id: device_id };
-      } else {
-        return { boolean: false };
-      }
-    });
+    if (device_id === db_device_id) {
+      return { boolean: true, email: email, device_id: device_id };
+    } else {
+      return { boolean: false };
+    }
+
+    // });
   } catch (error) {
     console.log(error);
 
