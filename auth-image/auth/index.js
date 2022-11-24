@@ -326,67 +326,38 @@ app.post(`/auth/verify-otp`, async (req, res) => {
 // check session token
 
 app.post("/auth/check-token", async (req, res) => {
-  try {
-    let token = req.body.token;
+  // check if token expired or wrong device
+  let token = req.body.token;
+  let check_result = await check_device_id_from_token(token);
 
-    jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
-      if (err) {
-        return res.json("expired");
-      }
-
-      let email = decoded.email;
-      let device_id = decoded.device_id;
-
-      const db_device_id_query = await pool.query(
-        `SELECT * FROM users WHERE email='${email}'`
-      );
-
-      const results = Object.values(
-        JSON.parse(JSON.stringify(db_device_id_query))
-      );
-
-      const db_device_id = results[0].device_id;
-
-      if (device_id === db_device_id) {
-        return res.json("pass");
-      } else {
-        return res.json("wrong-device");
-      }
-    });
-  } catch (error) {
-    console.log(error);
-
+  if (check_result.boolean) {
+    return res.json("pass");
+  } else {
     return res.json("error");
   }
 });
 
 // Create refresh token
 
-app.post("/auth/refresh-token", (req, res) => {
-  try {
-    let token = req.body.token;
+app.post("/auth/refresh-token", async (req, res) => {
+  let token = req.body.token;
+  let check_result = await check_device_id_from_token(token);
 
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-      if (err) {
-        return res.send({ type: "expired", message: "Token expired." });
+  if (check_result.boolean) {
+    let email = check_result.email;
+    let device_id = check_result.device_id;
+
+    const token = jwt.sign(
+      { email: email, device_id: device_id },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: 2592000,
       }
+    );
 
-      let email = decoded.email;
-      let device_id = decoded.device_id;
-
-      const token = jwt.sign(
-        { email: email, device_id: device_id },
-        process.env.JWT_SECRET,
-        {
-          expiresIn: 2592000,
-        }
-      );
-
-      return res.send({ type: "pass", token: token });
-    });
-  } catch (error) {
-    console.log("Error line 399: ", error);
-    return res.send({ type: "error", message: "Something went wrong!" });
+    return res.send({ type: "pass", token: token });
+  } else {
+    return res.send({ type: "expired", message: "Session expired." });
   }
 });
 
@@ -477,33 +448,20 @@ app.post("/auth/reset-password", async (req, res) => {
 });
 
 app.post("/auth/user", async (req, res) => {
-  try {
-    let token = req.body.token;
+  let token = req.body.token;
+  let check_result = await check_device_id_from_token(token);
 
-    jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
-      if (err) {
-        return res.send({ type: "expired" });
-      } else {
-        let email = decoded.email;
-        let device_id = decoded.device_id;
+  if (check_result.boolean) {
+    const result = await pool.query(
+      `SELECT name, email, device_id, coins, wallpaper_api, animated_api, image_api, cities_guide_api, tasks_note, giveaways FROM users WHERE email = '${email}'`
+    );
 
-        if (!(await check_device_id(email, device_id))) {
-          return res.send({ type: "wrong-device" });
-        }
-
-        const result = await pool.query(
-          `SELECT * FROM users WHERE email = '${email}'`
-        );
-
-        return res.send({ type: "success", userInfo: result[0] });
-      }
-    });
-  } catch (error) {
-    console.log("Error L524 : ", error);
-    return res.send({ type: "error" });
+    return res.send({ type: "success", userInfo: result[0] });
+  } else {
+    return res.send({ type: "wrong-device" });
   }
 });
-
+// not required
 app.post("/auth/update-paypal", async (req, res) => {
   try {
     let current_device_id = req.body.current_device_id;
@@ -558,27 +516,30 @@ app.post("/auth/update-paypal", async (req, res) => {
 
 app.post("/auth/update-password", async (req, res) => {
   try {
-    let email = req.body.email;
-    let current_device_id = req.body.current_device_id;
+    // let email = req.body.email;
+    // let current_device_id = req.body.current_device_id;
+    let token = req.body.token;
     let currentPassword = req.body.currentPassword;
     let newPassword = req.body.newPassword;
 
-    const queryResults = await pool.query(
-      `SELECT * FROM users WHERE email = '${email}'`
-    );
+    let check_result = await check_device_id_from_token(token);
 
-    const results = Object.values(JSON.parse(JSON.stringify(queryResults)));
+    if (check_result.boolean) {
+      let email = check_result.email;
 
-    let user = results[0];
+      const queryResults = await pool.query(
+        `SELECT * FROM users WHERE email = '${email}'`
+      );
 
-    if (!(await check_device_id(email, current_device_id))) {
-      // wrong device
-      return res.send({ type: "wrong-device" });
-      // force logout
-    } else if (!(await argon2.verify(user.password, currentPassword))) {
-      // wrong password
-      return res.send({ type: "wrong-password", message: "Wrong password!" });
-    } else {
+      const results = Object.values(JSON.parse(JSON.stringify(queryResults)));
+
+      let user = results[0];
+
+      if (!(await argon2.verify(user.password, currentPassword))) {
+        // wrong password
+        return res.send({ type: "wrong-password", message: "Wrong password!" });
+      }
+
       const hashedPassword = await argon2.hash(newPassword, 10);
 
       await pool.query(
@@ -619,6 +580,39 @@ async function check_device_id(email, device_id) {
   }
 }
 
+async function check_device_id_from_token(token) {
+  try {
+    jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+      if (err) {
+        return { boolean: false };
+      }
+
+      let email = decoded.email;
+      let device_id = decoded.device_id;
+
+      const db_device_id_query = await pool.query(
+        `SELECT * FROM users WHERE email='${email}'`
+      );
+
+      const results = Object.values(
+        JSON.parse(JSON.stringify(db_device_id_query))
+      );
+
+      const db_device_id = results[0].device_id;
+
+      if (device_id === db_device_id) {
+        return { boolean: true, email: email, device_id: device_id };
+      } else {
+        return { boolean: false };
+      }
+    });
+  } catch (error) {
+    console.log(error);
+
+    return { boolean: false };
+  }
+}
+
 function verification_code(length) {
   var result = "";
   var characters =
@@ -629,3 +623,118 @@ function verification_code(length) {
   }
   return result;
 }
+
+// old check for token -----
+
+// try {
+//   let token = req.body.token;
+
+//   jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+//     if (err) {
+//       return res.json("expired");
+//     }
+
+//     let email = decoded.email;
+//     let device_id = decoded.device_id;
+
+//     const db_device_id_query = await pool.query(
+//       `SELECT * FROM users WHERE email='${email}'`
+//     );
+
+//     const results = Object.values(
+//       JSON.parse(JSON.stringify(db_device_id_query))
+//     );
+
+//     const db_device_id = results[0].device_id;
+
+//     if (device_id === db_device_id) {
+//       return res.json("pass");
+//     } else {
+//       return res.json("wrong-device");
+//     }
+//   });
+// } catch (error) {
+//   console.log(error);
+
+//   return res.json("error");
+// }
+
+//-------------------
+
+// old refresh token
+
+// try {
+
+//   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+//     if (err) {
+//       return res.send({ type: "expired", message: "Token expired." });
+//     }
+
+//     let email = decoded.email;
+//     let device_id = decoded.device_id;
+
+//     const token = jwt.sign(
+//       { email: email, device_id: device_id },
+//       process.env.JWT_SECRET,
+//       {
+//         expiresIn: 2592000,
+//       }
+//     );
+
+//     return res.send({ type: "pass", token: token });
+//   });
+// } catch (error) {
+//   console.log("Error line 399: ", error);
+//   return res.send({ type: "error", message: "Something went wrong!" });
+// }
+
+// ----------------
+
+// old auth/user
+
+// try {
+//   let token = req.body.token;
+
+//   jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+//     if (err) {
+//       return res.send({ type: "expired" });
+//     } else {
+//       let email = decoded.email;
+//       let device_id = decoded.device_id;
+
+//       if (!(await check_device_id(email, device_id))) {
+//         return res.send({ type: "wrong-device" });
+//       }
+
+//       const result = await pool.query(
+//         `SELECT name, email, device_id, coins, wallpaper_api, animated_api, image_api, cities_guide_api, tasks_note, giveaways FROM users WHERE email = '${email}'`
+//       );
+
+//       return res.send({ type: "success", userInfo: result[0] });
+//     }
+//   });
+// } catch (error) {
+//   console.log("Error L524 : ", error);
+//   return res.send({ type: "error" });
+// }
+
+// old update password
+
+// const queryResults = await pool.query(
+//   `SELECT * FROM users WHERE email = '${email}'`
+// );
+
+// const results = Object.values(JSON.parse(JSON.stringify(queryResults)));
+
+// let user = results[0];
+
+// if (!(await check_device_id(email, current_device_id))) {
+//   // wrong device
+//   return res.send({ type: "wrong-device" });
+//   // force logout
+// } else if (!(await argon2.verify(user.password, currentPassword))) {
+//   // wrong password
+//   return res.send({ type: "wrong-password", message: "Wrong password!" });
+// } else {
+
+// }

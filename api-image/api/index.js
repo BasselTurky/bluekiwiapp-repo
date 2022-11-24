@@ -4,6 +4,7 @@ const express = require("express");
 const app = express();
 const server = require("http").createServer(app);
 const uuid = require("uuid");
+const argon2 = require("argon2");
 const bodyParser = require("body-parser");
 const nodemailer = require("nodemailer");
 const rateLimit = require("express-rate-limit");
@@ -210,6 +211,46 @@ app.post("/api/process-collect", async (req, res) => {
   }
 });
 
+app.post("/api/update-apis", async (req, res) => {
+  // to do: get device_id from token
+  let token = req.body.token;
+  let check_result = await check_device_id_from_token(token);
+  let api = req.body.api;
+  let required_coins = req.body.required_coins;
+  // get api
+  // get amount of coins needed
+
+  if (check_result.boolean) {
+    let email = check_result.email;
+
+    // get coins
+    let total_coins_query = await pool.query(
+      `SELECT coins FROM users WHERE email = '${email}'`
+    );
+
+    let results = Object.values(JSON.parse(JSON.stringify(total_coins_query)));
+
+    let total_coins = results[0];
+
+    // if less than required amount return not enough coins
+    if (total_coins < required_coins) {
+      return res.send({ type: "not_enough", message: "Not enough coins" });
+    } else {
+      let updated_amount_of_coins = total_coins - required_coins;
+
+      await pool.query(
+        `UPDATE users SET coins = '${updated_amount_of_coins}', ${api} = true WHERE email ='${email}'`
+      );
+
+      // if more take coins and update api
+      // return success to start animation
+      return res.send({ type: "success" });
+    }
+  } else {
+    return res.send({ type: "wrong-device" });
+  }
+});
+
 async function check_device_id(email, device_id) {
   // get current device id
 
@@ -231,3 +272,57 @@ async function check_device_id(email, device_id) {
     return false;
   }
 }
+
+async function check_device_id_from_token(token) {
+  try {
+    jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+      if (err) {
+        return { boolean: false };
+      }
+
+      let email = decoded.email;
+      let device_id = decoded.device_id;
+
+      const db_device_id_query = await pool.query(
+        `SELECT * FROM users WHERE email='${email}'`
+      );
+
+      const results = Object.values(
+        JSON.parse(JSON.stringify(db_device_id_query))
+      );
+
+      const db_device_id = results[0].device_id;
+
+      if (device_id === db_device_id) {
+        return { boolean: true, email: email, device_id: device_id };
+      } else {
+        return { boolean: false };
+      }
+    });
+  } catch (error) {
+    console.log(error);
+
+    return { boolean: false };
+  }
+}
+
+// try {
+//   const email = req.body.email;
+//   const device_id = req.body.device_id;
+
+//   const device_id_query = await pool.query(
+//     `SELECT device_id FROM users WHERE email = '${email}'`
+//   );
+//   const result = Object.values(JSON.parse(JSON.stringify(device_id_query)));
+
+//   const db_device_id = result[0].device_id;
+
+//   if (device_id !== db_device_id) {
+//     console.log("Wrong device");
+//     return res.send({ type: "wrong-device" });
+//   } else {
+
+//   }
+// } catch (error) {
+//   console.log(error);
+// }
