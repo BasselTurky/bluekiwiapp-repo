@@ -450,8 +450,9 @@ app.post("/auth/reset-password", async (req, res) => {
 app.post("/auth/user", async (req, res) => {
   let token = req.body.token;
   let check_result = await check_device_id_from_token(token);
-
+  console.log(check_result);
   if (check_result.boolean) {
+    let email = check_result.email;
     const result = await pool.query(
       `SELECT name, email, device_id, coins, wallpaper_api, animated_api, image_api, cities_guide_api, tasks_note, giveaways FROM users WHERE email = '${email}'`
     );
