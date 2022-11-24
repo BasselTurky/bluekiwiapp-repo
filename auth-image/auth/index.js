@@ -449,6 +449,7 @@ app.post("/auth/reset-password", async (req, res) => {
 
 app.post("/auth/user", async (req, res) => {
   let token = req.body.token;
+  // console.log(token);
   let check_result = await check_device_id_from_token(token);
   console.log(check_result);
   if (check_result.boolean) {
@@ -582,11 +583,12 @@ async function check_device_id(email, device_id) {
 }
 
 async function check_device_id_from_token(token) {
-  // try {
-  jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
-    if (err) {
-      return { boolean: false };
-    }
+  try {
+    let decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // , async (err, decoded) => {
+    // if (err) {
+    //   return { boolean: false };
+    // }
 
     let email = decoded.email;
     let device_id = decoded.device_id;
@@ -606,12 +608,13 @@ async function check_device_id_from_token(token) {
     } else {
       return { boolean: false };
     }
-  });
-  // } catch (error) {
-  //   console.log(error);
 
-  //   return { boolean: false };
-  // }
+    // });
+  } catch (error) {
+    console.log(error);
+
+    return { boolean: false };
+  }
 }
 
 function verification_code(length) {
