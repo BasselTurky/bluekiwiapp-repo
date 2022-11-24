@@ -237,10 +237,12 @@ app.post("/api/update-apis", async (req, res) => {
     if (total_coins < required_coins) {
       return res.send({ type: "not_enough", message: "Not enough coins" });
     } else {
+      console.log(typeof total_coins, total_coins);
+      console.log(typeof required_coins, required_coins);
       let updated_amount_of_coins = total_coins - required_coins;
 
       await pool.query(
-        `UPDATE users SET coins = '${updated_amount_of_coins}', ${api} = true WHERE email ='${email}'`
+        `UPDATE users SET coins = ${updated_amount_of_coins}, ${api} = true WHERE email ='${email}'`
       );
 
       // if more take coins and update api
