@@ -231,7 +231,7 @@ app.post("/api/update-apis", async (req, res) => {
 
     let results = Object.values(JSON.parse(JSON.stringify(total_coins_query)));
 
-    let total_coins = results[0];
+    let total_coins = results[0].coins;
 
     // if less than required amount return not enough coins
     if (total_coins < required_coins) {
