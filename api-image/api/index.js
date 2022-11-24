@@ -4,6 +4,7 @@ const express = require("express");
 const app = express();
 const server = require("http").createServer(app);
 const uuid = require("uuid");
+const jwt = require("jsonwebtoken");
 const argon2 = require("argon2");
 const bodyParser = require("body-parser");
 const nodemailer = require("nodemailer");
