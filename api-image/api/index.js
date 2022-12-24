@@ -254,6 +254,64 @@ app.post("/api/update-apis", async (req, res) => {
   }
 });
 
+app.post("/api/get-daily-wallpapers", async (req, res) => {
+  try {
+    let token = req.body.token;
+    let check_result = await check_device_id_from_token(token);
+    if (check_result.boolean) {
+      // get current date
+      let today = [
+        new Date().getUTCFullYear(),
+        new Date().getUTCMonth() + 1,
+        new Date().getUTCDate(),
+      ].join("-");
+
+      const query_result = await pool.query(
+        `SELECT * FROM wallpapers WHERE date(date) = '${today}'`
+      );
+
+      // const result = Object.values(JSON.parse(JSON.stringify(query_result)));
+
+      return res.send({ type: "success", result: query_result, date: today });
+    } else {
+      return res.send({ type: "wrong-device" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.send({ type: "error" });
+  }
+});
+
+app.post("/api/get-all-wallpapers", async (req, res) => {
+  try {
+    let token = req.body.token;
+    let check_result = await check_device_id_from_token(token);
+    if (check_result.boolean) {
+      // get current month date
+      const this_month = [
+        new Date().getUTCFullYear(),
+        new Date().getUTCMonth() + 1,
+        1,
+      ].join("-");
+
+      const query_result = await pool.query(
+        `SELECT * FROM wallpapers WHERE date(date) < '${this_month}'`
+      );
+
+      return res.send({
+        type: "success",
+        result: query_result,
+        date: this_month,
+      });
+    } else {
+      return res.send({ type: "wrong-device" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.send({ type: "error" });
+  }
+});
+
 async function check_device_id(email, device_id) {
   // get current device id
 
