@@ -260,11 +260,18 @@ app.post("/api/get-daily-wallpapers", async (req, res) => {
     let check_result = await check_device_id_from_token(token);
     if (check_result.boolean) {
       // get current date
-      let today = [
-        new Date().getUTCFullYear(),
-        new Date().getUTCMonth() + 1,
-        new Date().getUTCDate(),
-      ].join("-");
+
+      var date = new Date();
+      var now_utc = Date.UTC(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+        date.getUTCHours(),
+        date.getUTCMinutes(),
+        date.getUTCSeconds()
+      );
+      var date_string = new Date(now_utc).toISOString();
+      var today = date_string.substring(0, 10);
 
       const query_result = await pool.query(
         `SELECT * FROM wallpapers WHERE date(date) = '${today}'`
@@ -288,11 +295,18 @@ app.post("/api/get-all-wallpapers", async (req, res) => {
     let check_result = await check_device_id_from_token(token);
     if (check_result.boolean) {
       // get current month date
-      const this_month = [
-        new Date().getUTCFullYear(),
-        new Date().getUTCMonth() + 1,
-        "01",
-      ].join("-");
+
+      var date = new Date();
+      var now_utc = Date.UTC(
+        date.getUTCFullYear(),
+        date.getUTCMonth(),
+        date.getUTCDate(),
+        date.getUTCHours(),
+        date.getUTCMinutes(),
+        date.getUTCSeconds()
+      );
+      var date_string = new Date(now_utc).toISOString();
+      var this_month = date_string.substring(0, 8) + "01";
 
       const query_result = await pool.query(
         `SELECT * FROM wallpapers WHERE date(date) < '${this_month}'`
