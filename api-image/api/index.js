@@ -291,7 +291,7 @@ app.post("/api/get-all-wallpapers", async (req, res) => {
       const this_month = [
         new Date().getUTCFullYear(),
         new Date().getUTCMonth() + 1,
-        1,
+        "01",
       ].join("-");
 
       const query_result = await pool.query(
