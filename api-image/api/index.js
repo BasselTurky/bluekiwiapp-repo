@@ -100,7 +100,7 @@ app.post("/api/save-coin", async (req, res) => {
 
       let db_coins = result[0].coins;
       // save coin
-      let new_coins_amount = db_coins + 1;
+      let new_coins_amount = db_coins + 2;
 
       await pool.query(
         `UPDATE users SET coins = '${new_coins_amount}' WHERE email = '${email}'`
@@ -111,6 +111,51 @@ app.post("/api/save-coin", async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.send({ type: "error", message: "Something went wrong!" });
+  }
+});
+
+app.post("/api/download-wallpaper", async (req, res) => {
+  try {
+    let token = req.body.token;
+    let consumed_coins = req.body.consumed_coins;
+    let wallpaper_id = req.body.wallpaper_id;
+
+    let check_result = await check_device_id_from_token(token);
+    if (check_result.boolean) {
+      let email = check_result.email;
+
+      const user_data_query = await pool.query(
+        `SELECT * FROM users WHERE email = ${email}`
+      );
+
+      const user_data = Object.values(
+        JSON.parse(JSON.stringify(user_data_query))
+      )[0];
+
+      if (user_data.coins > consumed_coins) {
+        const new_coins_amount = user_data.coins - consumed_coins;
+
+        // consume coins
+        await pool.query(`
+        UPDATE users SET coins = ${new_coins_amount} WHERE email = '${email}'
+        `);
+        // update downloads number
+        await pool.query(`
+      UPDATE wallpapers SET downloads = downloads + 1 WHERE wallpaper_id = ${wallpaper_id}
+      `);
+
+        // to do: save log in database for every download (image id, user, date, coins before, coins after)
+
+        return res.send({ type: "success", updated_coins: new_coins_amount });
+      } else {
+        return res.send({ type: "insufficient", message: "Not enough coins." });
+      }
+    } else {
+      return res.send({ type: "wrong-device" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.send({ type: "error", message: "Something went wrong." });
   }
 });
 

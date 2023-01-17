@@ -77,7 +77,7 @@ app.post("/auth/register-data", async (req, res) => {
   const name = req.body.name;
   const email = req.body.email;
   const password = req.body.password;
-  const paypal = req.body.paypal;
+  // const paypal = req.body.paypal;
 
   // check if email is valid
   let email_validation_results = await emailValidator.validate({
@@ -106,7 +106,7 @@ app.post("/auth/register-data", async (req, res) => {
     name: name,
     email: email,
     password: hashedPassword,
-    paypal: paypal,
+    // paypal: paypal,
   };
   // Create token to be sent in verification email
 
@@ -150,7 +150,7 @@ app.get("/auth/verify/:token", async (req, res) => {
       let name = decoded.data.name;
       let email = decoded.data.email;
       let password = decoded.data.password;
-      let paypal = decoded.data.paypal;
+      // let paypal = decoded.data.paypal;
 
       const result = await pool.query(
         `SELECT * FROM users WHERE email = '${email}'`
@@ -165,7 +165,7 @@ app.get("/auth/verify/:token", async (req, res) => {
         // insert data in database
         try {
           const queryResult = await pool.query(
-            `INSERT INTO users (name, email, password, paypal) VALUES ('${name}','${email}','${password}','${paypal}')`
+            `INSERT INTO users (name, email, password) VALUES ('${name}','${email}','${password}')`
           );
 
           const result = Object.values(JSON.parse(JSON.stringify(queryResult)));
@@ -557,6 +557,51 @@ app.post("/auth/update-password", async (req, res) => {
     console.log(error);
 
     return res.send({ type: "error", message: "Something went wrong!" });
+  }
+});
+
+app.post("/auth/account-delete-request", async (req, res) => {
+  try {
+    let token = req.body.token;
+    let password = req.body.password;
+    let check_result = await check_device_id_from_token(token);
+    if (check_result.boolean) {
+      // check password
+
+      let email = check_result.email;
+
+      const queryResults = await pool.query(
+        `SELECT password FROM users WHERE email = '${email}'`
+      );
+
+      const results = Object.values(JSON.parse(JSON.stringify(queryResults)));
+
+      const db_password = results[0].password;
+
+      if (!(await argon2.verify(db_password, password))) {
+        return res.send({
+          type: "incorrect",
+          message: "Incorrect password.",
+        });
+      } else {
+        let result = await pool.query(
+          `DELETE FROM users WHERE email = ${email}`
+        );
+        return res.send({ type: "success" });
+      }
+
+      // get current date
+      // on client side:
+      // wait for success response
+      // force logout
+      // to do
+      // delete all data related to primary key email
+    } else {
+      return res.send({ type: "wrong-device" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.send({ type: "error", message: "Something went wrong!!" });
   }
 });
 
