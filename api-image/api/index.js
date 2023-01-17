@@ -132,7 +132,7 @@ app.post("/api/download-wallpaper", async (req, res) => {
         JSON.parse(JSON.stringify(user_data_query))
       )[0];
 
-      if (user_data.coins > consumed_coins) {
+      if (user_data.coins >= consumed_coins) {
         const new_coins_amount = user_data.coins - consumed_coins;
 
         // consume coins

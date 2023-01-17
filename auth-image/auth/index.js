@@ -455,7 +455,7 @@ app.post("/auth/user", async (req, res) => {
   if (check_result.boolean) {
     let email = check_result.email;
     const result = await pool.query(
-      `SELECT name, email, device_id, coins, wallpaper_api, animated_api, image_api, cities_guide_api, tasks_note, giveaways FROM users WHERE email = '${email}'`
+      `SELECT name, email, device_id, coins,image_api, wallpaper_api, archive_api,  giveaways FROM users WHERE email = '${email}'`
     );
 
     return res.send({ type: "success", userInfo: result[0] });
@@ -464,57 +464,57 @@ app.post("/auth/user", async (req, res) => {
   }
 });
 // not required
-app.post("/auth/update-paypal", async (req, res) => {
-  try {
-    let current_device_id = req.body.current_device_id;
-    let email = req.body.email;
-    let paypal = req.body.paypal;
-    let password = req.body.password;
+// app.post("/auth/update-paypal", async (req, res) => {
+//   try {
+//     let current_device_id = req.body.current_device_id;
+//     let email = req.body.email;
+//     let paypal = req.body.paypal;
+//     let password = req.body.password;
 
-    const queryResults = await pool.query(
-      `SELECT * FROM users WHERE email = '${email}'`
-    );
+//     const queryResults = await pool.query(
+//       `SELECT * FROM users WHERE email = '${email}'`
+//     );
 
-    const results = Object.values(JSON.parse(JSON.stringify(queryResults)));
+//     const results = Object.values(JSON.parse(JSON.stringify(queryResults)));
 
-    let user = results[0];
+//     let user = results[0];
 
-    if (!(await check_device_id(email, current_device_id))) {
-      // wrong device
-      return res.send({ type: "wrong-device" });
-      // force logout
-    } else if (!(await argon2.verify(user.password, password))) {
-      // wrong password
-      return res.send({ type: "wrong-password", message: "Wrong password!" });
-    } else {
-      // update paypal
+//     if (!(await check_device_id(email, current_device_id))) {
+//       // wrong device
+//       return res.send({ type: "wrong-device" });
+//       // force logout
+//     } else if (!(await argon2.verify(user.password, password))) {
+//       // wrong password
+//       return res.send({ type: "wrong-password", message: "Wrong password!" });
+//     } else {
+//       // update paypal
 
-      await pool.query(
-        `UPDATE users SET paypal = '${paypal}' WHERE email = '${email}'`
-      );
+//       await pool.query(
+//         `UPDATE users SET paypal = '${paypal}' WHERE email = '${email}'`
+//       );
 
-      const queryUserData = await pool.query(
-        `SELECT * FROM users WHERE email = '${email}'`
-      );
+//       const queryUserData = await pool.query(
+//         `SELECT * FROM users WHERE email = '${email}'`
+//       );
 
-      const result = Object.values(JSON.parse(JSON.stringify(queryUserData)));
+//       const result = Object.values(JSON.parse(JSON.stringify(queryUserData)));
 
-      let new_user_data = result[0];
+//       let new_user_data = result[0];
 
-      return res.send({
-        type: "success",
-        message: "Paypal username updated",
-        userData: new_user_data,
-      });
+//       return res.send({
+//         type: "success",
+//         message: "Paypal username updated",
+//         userData: new_user_data,
+//       });
 
-      // update userData state
-    }
-  } catch (error) {
-    console.log(error);
+//       // update userData state
+//     }
+//   } catch (error) {
+//     console.log(error);
 
-    return res.send({ type: "error", message: "Something went wrong!" });
-  }
-});
+//     return res.send({ type: "error", message: "Something went wrong!" });
+//   }
+// });
 
 app.post("/auth/update-password", async (req, res) => {
   try {
@@ -664,8 +664,9 @@ async function check_device_id_from_token(token) {
 
 function verification_code(length) {
   var result = "";
-  var characters =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  var characters = "0123456789";
+  // var characters =
+  //   "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   var charactersLength = characters.length;
   for (var i = 0; i < length; i++) {
     result += characters.charAt(Math.floor(Math.random() * charactersLength));
