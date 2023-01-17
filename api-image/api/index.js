@@ -318,9 +318,24 @@ app.post("/api/get-daily-wallpapers", async (req, res) => {
       var date_string = new Date(now_utc).toISOString();
       var today = date_string.substring(0, 10);
 
-      const query_result = await pool.query(
-        `SELECT * FROM wallpapers WHERE date(date) = '${today}'`
-      );
+      var day = today.substring(8);
+
+      var start_of_the_month = today.substring(0, 8) + "01";
+      var end_of_the_month = today.substring(0, 8) + "27";
+
+      var number_of_wallpapers = 20;
+
+      let query_result;
+
+      if (Number(day) > 27) {
+        query_result = await pool.query(`
+        SELECT * FROM wallpapers WHER date >= '${start_of_the_month}' AND date <= ${end_of_the_month} ORDER BY downloads DESC LIMIT ${number_of_wallpapers}
+        `);
+      } else {
+        query_result = await pool.query(
+          `SELECT * FROM wallpapers WHERE date(date) = '${today}'`
+        );
+      }
 
       // const result = Object.values(JSON.parse(JSON.stringify(query_result)));
 
