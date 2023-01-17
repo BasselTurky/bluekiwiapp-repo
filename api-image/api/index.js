@@ -125,7 +125,7 @@ app.post("/api/download-wallpaper", async (req, res) => {
       let email = check_result.email;
 
       const user_data_query = await pool.query(
-        `SELECT * FROM users WHERE email = ${email}`
+        `SELECT * FROM users WHERE email = '${email}'`
       );
 
       const user_data = Object.values(
