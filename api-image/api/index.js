@@ -329,9 +329,9 @@ app.post("/api/get-daily-wallpapers", async (req, res) => {
       let query_result;
 
       if (Number(day) > 27) {
-        query_result = await pool.query(`
-        SELECT * FROM wallpapers WHER date >= '${start_of_the_month}' AND date <= '${end_of_the_month}' ORDER BY downloads DESC LIMIT ${number_of_wallpapers}
-        `);
+        query_result = await pool.query(
+          `SELECT * FROM wallpapers WHER date >= '${start_of_the_month}' AND date <= '${end_of_the_month}' ORDER BY downloads DESC LIMIT ${number_of_wallpapers}`
+        );
       } else {
         query_result = await pool.query(
           `SELECT * FROM wallpapers WHERE date(date) = '${today}'`
