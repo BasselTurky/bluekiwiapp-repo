@@ -73,71 +73,79 @@ const transporter = nodemailer.createTransport({
 
 // add rate limiter : to do
 app.post("/auth/register-data", async (req, res) => {
-  // get the data
-  const name = req.body.name;
-  const email = req.body.email;
-  const password = req.body.password;
-  // const paypal = req.body.paypal;
-
-  // check if email is valid
-  let email_validation_results = await emailValidator.validate({
-    email: email,
-    validateSMTP: false,
-  });
-
-  if (!email_validation_results.valid) {
-    return res.send({ type: "error", message: "Email is invalid" });
-  }
-
-  // Check if email already exists
-
-  const results = await pool.query(
-    `SELECT email FROM users WHERE email = '${email}'`
-  );
-
-  if (results.length) {
-    return res.send({ type: "error", message: "Email is already taken" });
-  }
-
-  // hash the password
-  const hashedPassword = await argon2.hash(password, 10);
-
-  var newUserMysql = {
-    name: name,
-    email: email,
-    password: hashedPassword,
-    // paypal: paypal,
-  };
-  // Create token to be sent in verification email
-
-  const token = jwt.sign({ data: newUserMysql }, process.env.JWT_SECRET, {
-    expiresIn: 600,
-  });
-
-  // Email form
-  let url = `https://bluekiwiapp.com/auth/verify/${token}`;
-  const mailOptions = {
-    // "invite.me.application@hotmail.com"
-    from: process.env.SERVER_EMAIL,
-    to: email,
-    subject: "Verification email",
-    html: createVerificationEmail(url),
-  };
-
   try {
-    transporter.sendMail(mailOptions, function (error, info) {
-      return res.send({
-        type: "success",
-        message: `Email sent to: ${email} , please check all mails`,
-      });
+    const name = req.body.name;
+    const email = req.body.email;
+    const password = req.body.password;
+    // const paypal = req.body.paypal;
+
+    // check if email is valid
+    let email_validation_results = await emailValidator.validate({
+      email: email,
+      validateSMTP: false,
     });
+
+    if (!email_validation_results.valid) {
+      return res.send({ type: "error", message: "Email is invalid" });
+    }
+
+    // Check if email already exists
+
+    const results = await pool.query(
+      `SELECT email FROM users WHERE email = '${email}'`
+    );
+
+    if (results.length) {
+      return res.send({ type: "error", message: "Email is already taken" });
+    }
+
+    // hash the password
+    const hashedPassword = await argon2.hash(password, 10);
+
+    var newUserMysql = {
+      name: name,
+      email: email,
+      password: hashedPassword,
+      // paypal: paypal,
+    };
+    // Create token to be sent in verification email
+
+    const token = jwt.sign({ data: newUserMysql }, process.env.JWT_SECRET, {
+      expiresIn: 600,
+    });
+
+    // Email form
+    let url = `https://bluekiwiapp.com/auth/verify/${token}`;
+    const mailOptions = {
+      // "invite.me.application@hotmail.com"
+      from: process.env.SERVER_EMAIL,
+      to: email,
+      subject: "Verification email",
+      html: createVerificationEmail(url),
+    };
+
+    try {
+      transporter.sendMail(mailOptions, function (error, info) {
+        return res.send({
+          type: "success",
+          message: `Email sent to: ${email} , please check all mails`,
+        });
+      });
+    } catch (error) {
+      console.log(error);
+      return res.send({
+        type: "error",
+        message: "ErrorID: E014",
+      });
+    }
   } catch (error) {
     console.log(error);
     return res.send({
       type: "error",
-      message: "Something went wrong while sending verification mail",
+      message: "ErrorID: E013",
     });
   }
+  // get the data
 });
 
 app.get("/auth/verify/:token", async (req, res) => {
@@ -276,7 +284,7 @@ app.post("/auth/login-data", async (req, res) => {
     return res.send({ type: "success", token: token });
   } catch (error) {
     console.log(error);
-    return res.send({ type: "error", message: "Something went wrong!." });
+    return res.send({ type: "error", message: "ErrorID: E007" });
   }
 });
 
@@ -318,7 +326,7 @@ app.post(`/auth/verify-otp`, async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    return res.send({ type: "error", message: "Something went wrong!" });
+    return res.send({ type: "error", message: "ErrorID: E010" });
   }
 });
 
@@ -392,7 +400,7 @@ app.post("/auth/reset-password-data", async (req, res) => {
           console.log(error);
           return res.send({
             type: "error",
-            message: "Couldnt send verification mail",
+            message: "ErrorID: E018",
           });
         } else {
           return res.send({
@@ -404,7 +412,7 @@ app.post("/auth/reset-password-data", async (req, res) => {
     }
   } catch (error) {
     console.log("Error line 459: ", error);
-    return res.send({ type: "error", message: "Something went wrong!" });
+    return res.send({ type: "error", message: "ErrorID: E017" });
   }
 });
 
@@ -448,19 +456,24 @@ app.post("/auth/reset-password", async (req, res) => {
 });
 
 app.post("/auth/user", async (req, res) => {
-  let token = req.body.token;
-  // console.log(token);
-  let check_result = await check_device_id_from_token(token);
-  console.log(check_result);
-  if (check_result.boolean) {
-    let email = check_result.email;
-    const result = await pool.query(
-      `SELECT name, email, device_id, coins,image_api, wallpaper_api, archive_api,  giveaways FROM users WHERE email = '${email}'`
-    );
+  try {
+    let token = req.body.token;
+    let check_result = await check_device_id_from_token(token);
+    console.log(check_result);
+    if (check_result.boolean) {
+      let email = check_result.email;
+      const result = await pool.query(
+        `SELECT name, email, device_id, coins,image_api, wallpaper_api, archive_api,  giveaways FROM users WHERE email = '${email}'`
+      );
 
-    return res.send({ type: "success", userInfo: result[0] });
-  } else {
-    return res.send({ type: "wrong-device" });
+      return res.send({ type: "success", userInfo: result[0] });
+    } else {
+      return res.send({ type: "wrong-device" });
+    }
+  } catch (error) {
+    console.log(error);
+
+    return res.send({ type: "error", message: "ErrorID: E021" });
   }
 });
 // not required
@@ -556,7 +569,7 @@ app.post("/auth/update-password", async (req, res) => {
   } catch (error) {
     console.log(error);
 
-    return res.send({ type: "error", message: "Something went wrong!" });
+    return res.send({ type: "error", message: "ErrorID: E031" });
   }
 });
 
@@ -601,7 +614,7 @@ app.post("/auth/account-delete-request", async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    return res.send({ type: "error", message: "Something went wrong!!" });
+    return res.send({ type: "error", message: "ErrorID: E027" });
   }
 });
 

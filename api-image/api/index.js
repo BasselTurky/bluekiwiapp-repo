@@ -72,26 +72,18 @@ app.get("/api", (req, res) => {
 });
 
 app.post("/api/save-coin", async (req, res) => {
+  // get device ID from req, get Device ID from DB
+  // Compare the two IDs
+  // if false return different user | force logout
+  // if true save 1 coin in DB, response success
+
   try {
-    // get device ID from req, get Device ID from DB
-    // Compare the two IDs
-    // if false return different user | force logout
-    // if true save 1 coin in DB, response success
-    //
-    const email = req.body.email;
-    const device_id = req.body.device_id;
+    let token = req.body.token;
 
-    const device_id_query = await pool.query(
-      `SELECT device_id FROM users WHERE email = '${email}'`
-    );
-    const result = Object.values(JSON.parse(JSON.stringify(device_id_query)));
+    let check_result = await check_device_id_from_token(token);
+    if (check_result.boolean) {
+      let email = check_result.email;
 
-    const db_device_id = result[0].device_id;
-
-    if (device_id !== db_device_id) {
-      console.log("Wrong device");
-      return res.send({ type: "wrong-device" });
-    } else {
       // get current coins
       let queryCoins = await pool.query(
         `SELECT coins FROM users WHERE email = '${email}'`
@@ -107,10 +99,12 @@ app.post("/api/save-coin", async (req, res) => {
       );
 
       return res.send({ type: "success" });
+    } else {
+      return res.send({ type: "wrong-device" });
     }
   } catch (error) {
     console.log(error);
-    return res.send({ type: "error", message: "Something went wrong!" });
+    return res.send({ type: "error", message: "ErrorID: E034" });
   }
 });
 
@@ -155,7 +149,7 @@ app.post("/api/download-wallpaper", async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    return res.send({ type: "error", message: "Something went wrong." });
+    return res.send({ type: "error", message: "ErrorID: E045" });
   }
 });
 
@@ -258,44 +252,51 @@ app.post("/api/process-collect", async (req, res) => {
 });
 
 app.post("/api/update-apis", async (req, res) => {
-  // to do: get device_id from token
-  let token = req.body.token;
-  let check_result = await check_device_id_from_token(token);
-  let api = req.body.api;
-  let required_coins = req.body.required_coins;
-  // get api
-  // get amount of coins needed
+  try {
+    // to do: get device_id from token
+    let token = req.body.token;
+    let check_result = await check_device_id_from_token(token);
+    let api = req.body.api;
+    let required_coins = req.body.required_coins;
+    // get api
+    // get amount of coins needed
 
-  if (check_result.boolean) {
-    let email = check_result.email;
+    if (check_result.boolean) {
+      let email = check_result.email;
 
-    // get coins
-    let total_coins_query = await pool.query(
-      `SELECT coins FROM users WHERE email = '${email}'`
-    );
-
-    let results = Object.values(JSON.parse(JSON.stringify(total_coins_query)));
-
-    let total_coins = results[0].coins;
-
-    // if less than required amount return not enough coins
-    if (total_coins < required_coins) {
-      return res.send({ type: "not_enough", message: "Not enough coins" });
-    } else {
-      console.log(typeof total_coins, total_coins);
-      console.log(typeof required_coins, required_coins);
-      let updated_amount_of_coins = total_coins - required_coins;
-
-      await pool.query(
-        `UPDATE users SET coins = ${updated_amount_of_coins}, ${api} = true WHERE email ='${email}'`
+      // get coins
+      let total_coins_query = await pool.query(
+        `SELECT coins FROM users WHERE email = '${email}'`
       );
 
-      // if more take coins and update api
-      // return success to start animation
-      return res.send({ type: "success" });
+      let results = Object.values(
+        JSON.parse(JSON.stringify(total_coins_query))
+      );
+
+      let total_coins = results[0].coins;
+
+      // if less than required amount return not enough coins
+      if (total_coins < required_coins) {
+        return res.send({ type: "not_enough", message: "Not enough coins" });
+      } else {
+        console.log(typeof total_coins, total_coins);
+        console.log(typeof required_coins, required_coins);
+        let updated_amount_of_coins = total_coins - required_coins;
+
+        await pool.query(
+          `UPDATE users SET coins = ${updated_amount_of_coins}, ${api} = true WHERE email ='${email}'`
+        );
+
+        // if more take coins and update api
+        // return success to start animation
+        return res.send({ type: "success" });
+      }
+    } else {
+      return res.send({ type: "wrong-device" });
     }
-  } else {
-    return res.send({ type: "wrong-device" });
+  } catch (error) {
+    console.log(error);
+    return res.send({ type: "error", message: "ErroID: E025" });
   }
 });
 
@@ -345,7 +346,7 @@ app.post("/api/get-daily-wallpapers", async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    return res.send({ type: "error" });
+    return res.send({ type: "error", message: "ErrorID: E039" });
   }
 });
 
@@ -382,7 +383,7 @@ app.post("/api/get-all-wallpapers", async (req, res) => {
     }
   } catch (error) {
     console.log(error);
-    return res.send({ type: "error" });
+    return res.send({ type: "error", message: "ErrorID: E052" });
   }
 });
 
