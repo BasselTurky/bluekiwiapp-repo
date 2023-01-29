@@ -598,7 +598,7 @@ app.post("/auth/account-delete-request", async (req, res) => {
         });
       } else {
         let result = await pool.query(
-          `DELETE FROM users WHERE email = ${email}`
+          `DELETE FROM users WHERE email = '${email}'`
         );
         return res.send({ type: "success" });
       }
