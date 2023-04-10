@@ -463,7 +463,7 @@ app.post("/auth/user", async (req, res) => {
     if (check_result.boolean) {
       let email = check_result.email;
       const result = await pool.query(
-        `SELECT name, email, device_id, coins,image_api, wallpaper_api, archive_api,  giveaways FROM users WHERE email = '${email}'`
+        `SELECT name, email, device_id, coins FROM users WHERE email = '${email}'`
       );
 
       return res.send({ type: "success", userInfo: result[0] });
