@@ -175,8 +175,11 @@ app.get("/auth/verify/:token", async (req, res) => {
           let set = new Set(Array.from({ length: 9999 }, (_, i) => i + 1));
 
           const discriminatorQuery = await pool.query(
-            `SELECT discriminator FROM users WHERER name = '${name}'`
+            `SELECT discriminator FROM users WHERE name = '${name}'`
           );
+
+          if (discriminatorQuery.length) {
+          }
 
           const discriminatorResult = Object.values(
             JSON.parse(JSON.stringify(discriminatorQuery))
@@ -187,13 +190,16 @@ app.get("/auth/verify/:token", async (req, res) => {
             (result) => result.discriminator
           );
 
-          for (let i = 0; i < discriminatorArray.length; i++) {
-            set.delete(discriminatorArray[i]);
+          if (discriminatorArray.length > 0) {
+            for (let i = 0; i < discriminatorArray.length; i++) {
+              set.delete(discriminatorArray[i]);
+            }
           }
 
           // check if discriminatorArray has 4445
+          // console.log('first check',discriminatorArray.includes(4445));
 
-          console.log(set.has(4445));
+          console.log("second check", set.has(4445));
 
           // select random number from Set
 
