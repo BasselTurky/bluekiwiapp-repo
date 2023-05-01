@@ -172,8 +172,42 @@ app.get("/auth/verify/:token", async (req, res) => {
       } else {
         // insert data in database
         try {
+          let set = new Set(Array.from({ length: 9999 }, (_, i) => i + 1));
+
+          const discriminatorQuery = await pool.query(
+            `SELECT discriminator FROM users WHERER name = '${name}'`
+          );
+
+          const discriminatorResult = Object.values(
+            JSON.parse(JSON.stringify(discriminatorQuery))
+          ); // array of objects
+          // currently 1 user > 4445 > [{discriminator: 4445}]
+
+          const discriminatorArray = discriminatorResult.map(
+            (result) => result.discriminator
+          );
+
+          for (let i = 0; i < discriminatorArray.length; i++) {
+            set.delete(discriminatorArray[i]);
+          }
+
+          // check if discriminatorArray has 4445
+
+          console.log(set.has(4445));
+
+          // select random number from Set
+
+          const availableDiscriminators = Array.from(set);
+          const randomIndex = Math.floor(
+            Math.random() * availableDiscriminators.length
+          );
+          const randomNumber = availableDiscriminators[randomIndex];
+          const paddedNumber = randomNumber.toString().padStart(4, "0");
+
+          const uniqueId = name + "#" + paddedNumber;
+
           const queryResult = await pool.query(
-            `INSERT INTO users (name, email, password) VALUES ('${name}','${email}','${password}')`
+            `INSERT INTO users (name, discriminator, uid, email, password) VALUES ('${name}',${paddedNumber}',${uniqueId}','${email}','${password}')`
           );
 
           const result = Object.values(JSON.parse(JSON.stringify(queryResult)));
