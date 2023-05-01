@@ -213,7 +213,7 @@ app.get("/auth/verify/:token", async (req, res) => {
           const uniqueId = name + "#" + paddedNumber;
 
           const queryResult = await pool.query(
-            `INSERT INTO users (name, discriminator, uid, email, password) VALUES ('${name}',${paddedNumber}',${uniqueId}','${email}','${password}')`
+            `INSERT INTO users (name, discriminator, uid, email, password) VALUES ('${name}','${paddedNumber}','${uniqueId}','${email}','${password}')`
           );
 
           const result = Object.values(JSON.parse(JSON.stringify(queryResult)));
