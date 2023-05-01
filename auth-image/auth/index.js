@@ -222,6 +222,7 @@ app.get("/auth/verify/:token", async (req, res) => {
 
           return res.render("verified.ejs");
         } catch (error) {
+          console.log(error);
           console.log("Database Error");
 
           return res.send("<h1>Error</h1>");
