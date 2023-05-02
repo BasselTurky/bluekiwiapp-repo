@@ -265,7 +265,7 @@ app.post("/auth/login-data", async (req, res) => {
     // Create token
 
     const token = jwt.sign(
-      { email: email, device_id: device_id },
+      { email: email, device_id: device_id, uid: user.uid },
       process.env.JWT_SECRET,
       {
         expiresIn: 2592000,
@@ -343,6 +343,7 @@ app.post(`/auth/verify-otp`, async (req, res) => {
 
       let decoded_otp = decoded.otp;
       let email = decoded.email;
+      let uid = decoded.uid;
 
       if (decoded_otp === otpInput) {
         // verified
@@ -352,7 +353,7 @@ app.post(`/auth/verify-otp`, async (req, res) => {
         );
 
         const token = jwt.sign(
-          { email: email, device_id: device_id },
+          { email: email, device_id: device_id, uid: uid },
           process.env.JWT_SECRET,
           {
             expiresIn: 2592000,
@@ -395,9 +396,10 @@ app.post("/auth/refresh-token", async (req, res) => {
   if (check_result.boolean) {
     let email = check_result.email;
     let device_id = check_result.device_id;
+    let uid = check_result.uid;
 
     const token = jwt.sign(
-      { email: email, device_id: device_id },
+      { email: email, device_id: device_id, uid: uid },
       process.env.JWT_SECRET,
       {
         expiresIn: 2592000,
@@ -504,7 +506,7 @@ app.post("/auth/user", async (req, res) => {
     if (check_result.boolean) {
       let email = check_result.email;
       const result = await pool.query(
-        `SELECT name, email, device_id, coins FROM users WHERE email = '${email}'`
+        `SELECT name, email, device_id, uid, coins FROM users WHERE email = '${email}'`
       );
 
       return res.send({ type: "success", userInfo: result[0] });
@@ -691,6 +693,7 @@ async function check_device_id_from_token(token) {
 
     let email = decoded.email;
     let device_id = decoded.device_id;
+    let uid = decoded.uid;
 
     const db_device_id_query = await pool.query(
       `SELECT * FROM users WHERE email ='${email}'`
@@ -703,7 +706,7 @@ async function check_device_id_from_token(token) {
     const db_device_id = results[0].device_id;
 
     if (device_id === db_device_id) {
-      return { boolean: true, email: email, device_id: device_id };
+      return { boolean: true, email: email, device_id: device_id, uid: uid };
     } else {
       return { boolean: false };
     }

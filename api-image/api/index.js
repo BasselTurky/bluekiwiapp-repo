@@ -419,6 +419,7 @@ async function check_device_id_from_token(token) {
 
     let email = decoded.email;
     let device_id = decoded.device_id;
+    let uid = decoded.uid;
 
     const db_device_id_query = await pool.query(
       `SELECT * FROM users WHERE email ='${email}'`
@@ -431,7 +432,7 @@ async function check_device_id_from_token(token) {
     const db_device_id = results[0].device_id;
 
     if (device_id === db_device_id) {
-      return { boolean: true, email: email, device_id: device_id };
+      return { boolean: true, email: email, device_id: device_id, uid: uid };
     } else {
       return { boolean: false };
     }
