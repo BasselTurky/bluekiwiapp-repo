@@ -14,11 +14,6 @@ const pool = mysql.createPool({
 // DB_PASS=password
 // DB_NAME=inviteme
 
-// - DB_HOST=127.0.0.1
-// - DB_USER=bluekiwi
-// - DB_PASS=kiwi@1117734644
-// - DB_NAME=bluedb
-
 pool.getConnection((err, connection) => {
   if (err) {
     if (err.code === "PROTOCOL_CONNECTION_LOST") {

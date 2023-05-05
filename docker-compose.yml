@@ -88,6 +88,29 @@ services:
     # networks:
     #   - internalnet
     restart: unless-stopped
+
+  node-cron:
+    image: node_cron_image
+    container_name: nodeCron-con
+    network_mode: host
+    environment:
+      - DB_HOST=127.0.0.1
+      - DB_USER=bluekiwi
+      - DB_PASS=kiwi@1117734644
+      - DB_NAME=bluedb
+      - SERVER_PORT=3003
+      - JWT_SECRET=6708294
+      - TRANSPORTER_EMAIL_PASS=Bb6708294
+      - SERVER_EMAIL=invite.me.application@hotmail.com
+      - SMTP_NAME=bluekiwiapp.com
+    # ports:
+    #   - "3002:3002"
+    # depends_on:
+    #   mysqldb:
+    #     condition: service_healthy
+    # networks:
+    #   - internalnet
+    restart: unless-stopped
 # volumes:
 #   db:
 # networks:
