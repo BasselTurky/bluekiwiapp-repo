@@ -1,13 +1,15 @@
 // at 00:00 UTC everyday
 console.log("job is running");
 // connect to database
-try {
-  const pool = require("./database");
-  // select active giveaway row
-
+const pool = require("./database");
+async function testDB() {
   const result = await pool.query(`SELECT * FROM giveaways WHERE id = 3`);
 
   console.log(result);
+}
+try {
+  // select active giveaway row
+  testDB();
 } catch (error) {
   console.log(error);
   console.log("job is running again");
