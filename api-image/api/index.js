@@ -387,6 +387,41 @@ app.post("/api/get-all-wallpapers", async (req, res) => {
   }
 });
 
+app.post("/api/check-winner", async (req, res) => {
+  try {
+    let token = req.body.token;
+    let check_result = await check_device_id_from_token(token);
+    if (check_result.boolean) {
+      // check if user is a winner
+
+      const email = check_result.email;
+      const uid = check_result.uid;
+
+      const isWinnerQuery = await pool.query(
+        `SELECT CASE WHEN winner = 1 THEN 'true' ELSE 'false' FROM users WHERE email = '${email}'`
+      );
+      const isWinner = Object.values(
+        JSON.parse(JSON.stringify(isWinnerQuery))[0].winner
+      );
+
+      console.log(isWinner);
+
+      if (isWinner) {
+        return res.send({
+          type: "success",
+          isWinner: isWinner, // true
+        });
+      } else {
+      }
+    } else {
+      return res.send({ type: "wrong-device" });
+    }
+  } catch (error) {
+    console.log(error);
+    return res.send({ type: "error", message: "ErrorID: E060" });
+  }
+});
+
 async function check_device_id(email, device_id) {
   // get current device id
 

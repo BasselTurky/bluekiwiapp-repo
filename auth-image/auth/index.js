@@ -99,6 +99,41 @@ app.post("/auth/register-data", async (req, res) => {
       return res.send({ type: "error", message: "Email is already taken" });
     }
 
+    // to do: needs testing
+
+    // check if name has discriminators available
+
+    let set = new Set(Array.from({ length: 9999 }, (_, i) => i + 1));
+    // check if name exists
+    const discriminatorQuery = await pool.query(
+      `SELECT discriminator FROM users WHERE name = '${name}'`
+    );
+
+    const discriminatorResult = Object.values(
+      JSON.parse(JSON.stringify(discriminatorQuery))
+    ); // array of objects
+
+    // extract discriminators from query
+    const discriminatorArray = discriminatorResult.map(
+      (result) => result.discriminator
+    );
+
+    // check if any discriminators are taken : for example Bassel#2224, Bassel#4852, Bassel#9983
+    if (discriminatorArray.length > 0) {
+      // delete existed discriminators from the Set
+      for (let i = 0; i < discriminatorArray.length; i++) {
+        set.delete(discriminatorArray[i]);
+      }
+    }
+
+    const availableDiscriminators = Array.from(set);
+    // check if all discriminators are taken
+
+    if (!availableDiscriminators.length) {
+      // infrom user that name is not available
+      return res.send({ tyoe: "error", message: "Name is not available." });
+    }
+
     // hash the password
     const hashedPassword = await argon2.hash(password, 10);
 
@@ -172,38 +207,44 @@ app.get("/auth/verify/:token", async (req, res) => {
       } else {
         // insert data in database
         try {
+          // create set of 9999 numbers to select from
           let set = new Set(Array.from({ length: 9999 }, (_, i) => i + 1));
-
+          // check if name exists
           const discriminatorQuery = await pool.query(
             `SELECT discriminator FROM users WHERE name = '${name}'`
           );
-
-          if (discriminatorQuery.length) {
-          }
 
           const discriminatorResult = Object.values(
             JSON.parse(JSON.stringify(discriminatorQuery))
           ); // array of objects
           // currently 1 user > 4445 > [{discriminator: 4445}]
 
+          // extract discriminators from query
           const discriminatorArray = discriminatorResult.map(
             (result) => result.discriminator
           );
 
+          // check if any discriminators are taken : for example Bassel#2224, Bassel#4852, Bassel#9983
           if (discriminatorArray.length > 0) {
+            // delete existed discriminators from the Set
             for (let i = 0; i < discriminatorArray.length; i++) {
               set.delete(discriminatorArray[i]);
             }
           }
 
           // check if discriminatorArray has 4445
-          // console.log('first check',discriminatorArray.includes(4445));
-
           console.log("second check", set.has(4445));
 
           // select random number from Set
 
           const availableDiscriminators = Array.from(set);
+          // check if all discriminators are taken
+
+          // if(!availableDiscriminators.length){
+          //   // infrom user that name is not available
+
+          // }
+
           const randomIndex = Math.floor(
             Math.random() * availableDiscriminators.length
           );
