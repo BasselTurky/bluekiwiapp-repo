@@ -1,13 +1,18 @@
 // at 00:00 UTC everyday
-
-// connect to database
-const pool = require("./database");
-// select active giveaway row
 console.log("job is running");
+// connect to database
+try {
+  const pool = require("./database");
+  // select active giveaway row
 
-const result = await pool.query(`SELECT * FROM giveaways WHERE id = 3`);
+  const result = await pool.query(`SELECT * FROM giveaways WHERE id = 3`);
 
-console.log(result);
+  console.log(result);
+} catch (error) {
+  console.log(error);
+  console.log("job is running again");
+}
+
 // check if total participants > or < 1000
 // if total < 1000 : do nothing
 // if total >= 1000 :
