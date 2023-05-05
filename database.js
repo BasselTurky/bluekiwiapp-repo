@@ -3,10 +3,10 @@ const util = require("util");
 const mysql = require("mysql2");
 const pool = mysql.createPool({
   connectionLimit: 20,
-  host: "127.0.0.1",
-  user: "bluekiwi",
-  password: "kiwi@1117734644",
-  database: "bluedb",
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
+  database: process.env.DB_NAME,
 });
 
 // DB_HOST=localhost

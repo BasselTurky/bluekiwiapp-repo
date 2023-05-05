@@ -18,6 +18,22 @@ const {
 } = require("./functions/createVerificationEmail");
 const { createOtpEmail } = require("./functions/createOtpEmail");
 const { createResetPassEmail } = require("./functions/createResetPassEmail");
+
+const CronJob = require("cron").CronJob;
+
+const job = new CronJob(
+  "* * * * *",
+  () => {
+    // Your code to be executed at 00:00 UTC every day goes here
+    console.log("every minute");
+  },
+  null,
+  true,
+  "UTC"
+);
+
+job.start();
+
 // Environment variables
 const port = process.env.SERVER_PORT;
 
