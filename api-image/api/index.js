@@ -398,21 +398,21 @@ app.post("/api/check-winner", async (req, res) => {
       const uid = check_result.uid;
 
       const isWinnerQuery = await pool.query(
-        `SELECT CASE WHEN winner = 1 THEN 'true' ELSE 'false' FROM users WHERE email = '${email}'`
+        `SELECT CASE WHEN winner_giveawayId = 1 THEN 'true' ELSE 'false' END FROM users WHERE email = '${email}'`
       );
       const isWinner = Object.values(
-        JSON.parse(JSON.stringify(isWinnerQuery))[0].winner
+        JSON.parse(JSON.stringify(isWinnerQuery))[0]
       );
 
       console.log(isWinner);
-
-      if (isWinner) {
-        return res.send({
-          type: "success",
-          isWinner: isWinner, // true
-        });
-      } else {
-      }
+      return res.send({ type: "success", data: isWinner });
+      // if (isWinner) {
+      //   return res.send({
+      //     type: "success",
+      //     isWinner: isWinner, // true
+      //   });
+      // } else {
+      // }
     } else {
       return res.send({ type: "wrong-device" });
     }
