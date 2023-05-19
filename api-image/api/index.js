@@ -398,7 +398,7 @@ app.post("/api/check-winner", async (req, res) => {
       const uid = check_result.uid;
 
       const isWinnerQuery = await pool.query(
-        `SELECT CASE WHEN winner_giveawayId = 1 THEN TRUE ELSE FALSE END FROM users WHERE email = '${email}'`
+        `SELECT winner_giveawayId FROM users WHERE email = '${email}'`
       );
       const isWinner = Object.values(
         JSON.parse(JSON.stringify(isWinnerQuery))[0]
