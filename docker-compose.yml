@@ -20,7 +20,7 @@ services:
   #     - internalnet
   #   restart: unless-stopped
 
-  node-api-A:
+  node-api-a:
     build:
       context: https://github.com/BasselTurky/bluekiwiapp-repo/tree/main/api-image.git
     # image: node_api_image
@@ -45,7 +45,7 @@ services:
     #   - internalnet
     restart: unless-stopped
 
-  node-api-B:
+  node-api-b:
     build:
       context: https://github.com/BasselTurky/bluekiwiapp-repo/tree/main/api-image.git
     # image: node_api_image
