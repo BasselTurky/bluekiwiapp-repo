@@ -22,7 +22,7 @@ services:
 
   node-api-a:
     build:
-      context: git@github.com:BasselTurky/bluekiwiapp-repo.git
+      context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main
       dockerfile: api-image/Dockerfile
       args:
         - SSH_PRIVATE_KEY=Bb6708294
@@ -50,7 +50,7 @@ services:
 
   node-api-b:
     build:
-      context: git@github.com:BasselTurky/bluekiwiapp-repo.git
+      context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main
       dockerfile: api-image/Dockerfile
       args:
         - SSH_PRIVATE_KEY=Bb6708294
@@ -78,7 +78,7 @@ services:
 
   node-auth:
     build:
-      context: git@github.com:BasselTurky/bluekiwiapp-repo.git
+      context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main
       dockerfile: auth-image/Dockerfile
       args:
         - SSH_PRIVATE_KEY=Bb6708294
@@ -106,7 +106,7 @@ services:
 
   node-cron:
     build:
-      context: git@github.com:BasselTurky/bluekiwiapp-repo.git
+      context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main
       dockerfile: cron-image/Dockerfile
       args:
         - SSH_PRIVATE_KEY=Bb6708294
