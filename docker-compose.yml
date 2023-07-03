@@ -22,7 +22,8 @@ services:
 
   node-api-a:
     build:
-      context: https://github.com/BasselTurky/bluekiwiapp-repo/tree/main/api-image.git
+      context: https://github.com/BasselTurky/bluekiwiapp-repo.git
+      dockerfile: api-image/Dockerfile
     # image: node_api_image
     container_name: nodeApiA-con
     network_mode: host
@@ -47,7 +48,8 @@ services:
 
   node-api-b:
     build:
-      context: https://github.com/BasselTurky/bluekiwiapp-repo/tree/main/api-image.git
+      context: https://github.com/BasselTurky/bluekiwiapp-repo.git
+      dockerfile: api-image/Dockerfile
     # image: node_api_image
     container_name: nodeApiB-con
     network_mode: host
@@ -72,7 +74,8 @@ services:
 
   node-auth:
     build:
-      context: https://github.com/BasselTurky/bluekiwiapp-repo/tree/main/auth-image.git
+      context: https://github.com/BasselTurky/bluekiwiapp-repo.git
+      dockerfile: auth-image/Dockerfile
     # image: node_auth_image
     container_name: nodeAuth-con
     network_mode: host
@@ -97,7 +100,8 @@ services:
 
   node-cron:
     build:
-      context: https://github.com/BasselTurky/bluekiwiapp-repo/tree/main/cron-image.git
+      context: https://github.com/BasselTurky/bluekiwiapp-repo.git
+      dockerfile: cron-image/Dockerfile
     # image: node_cron_image
     container_name: nodeCron-con
     network_mode: host
