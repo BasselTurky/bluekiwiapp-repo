@@ -21,7 +21,9 @@ services:
   #   restart: unless-stopped
 
   node-api-A:
-    image: node_api_image
+    build:
+      context:
+    # image: node_api_image
     container_name: nodeApiA-con
     network_mode: host
     environment:
@@ -44,7 +46,9 @@ services:
     restart: unless-stopped
 
   node-api-B:
-    image: node_api_image
+    build:
+      context:
+    # image: node_api_image
     container_name: nodeApiB-con
     network_mode: host
     environment:
@@ -67,7 +71,9 @@ services:
     restart: unless-stopped
 
   node-auth:
-    image: node_auth_image
+    build:
+      context:
+    # image: node_auth_image
     container_name: nodeAuth-con
     network_mode: host
     environment:
@@ -90,7 +96,9 @@ services:
     restart: unless-stopped
 
   node-cron:
-    image: node_cron_image
+    build:
+      context:
+    # image: node_cron_image
     container_name: nodeCron-con
     network_mode: host
     environment:

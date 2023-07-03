@@ -398,13 +398,52 @@ app.post("/api/check-winner", async (req, res) => {
       const uid = check_result.uid;
 
       const isWinnerQuery = await pool.query(
-        `SELECT winner_giveawayId FROM users WHERE email = '${email}'`
+        `SELECT * FROM users WHERE email = '${email}'`
       );
       const isWinner = Object.values(
         JSON.parse(JSON.stringify(isWinnerQuery))[0]
       );
 
+      try {
+        const activeGiveawayQuery = await pool.query(
+          `SELECT * FROM giveaways WHERE status = 'active'`
+        );
+        const activeGiveawayResult = Object.values(
+          JSON.parse(JSON.stringify(activeGiveawayQuery))
+        );
+
+        if (!activeGiveawayResult.length) {
+          // no active giveaway available
+          return;
+        }
+
+        const activeGiveaway = activeGiveawayResult[0]; // object {id:number, date:DATETIME, total_participants:number, winner-uid:string, reward_type:string, reward_value:string, optained:0, status:'active'}
+
+        // get array of all participants
+        const participantsArrayQuery =
+          await pool.query(`SELECT participants.*, users.uid
+        FROM participants
+        JOIN users ON participants.userId = users.id
+        JOIN giveaways ON participants.giveawayId = giveaways.id
+        WHERE giveaways.id = '${activeGiveaway.id}'
+        `);
+
+        const participantsArrayResult = Object.values(
+          JSON.parse(JSON.stringify(participantsArrayQuery))
+        );
+        // [{id, giveawayId, userId, date, uid},{id, giveawayId, userId, date, uid},...]
+
+        const uidArray = participantsArrayResult.map((result) => result.uid);
+        const total_participants = uidArray.length;
+        const rewardValueUSD = Math.floor(total_participants / 1000) * 10;
+      } catch (error) {}
+
       console.log(isWinner);
+
+      if (!isWinner) {
+        //
+      }
+
       return res.send({ type: "success", data: isWinner });
       // if (isWinner) {
       //   return res.send({
