@@ -24,6 +24,8 @@ services:
     build:
       context: git@github.com:BasselTurky/bluekiwiapp-repo.git
       dockerfile: api-image/Dockerfile
+      args:
+        - SSH_PRIVATE_KEY=Bb6708294
     # image: node_api_image
     container_name: nodeApiA-con
     network_mode: host
@@ -50,6 +52,8 @@ services:
     build:
       context: git@github.com:BasselTurky/bluekiwiapp-repo.git
       dockerfile: api-image/Dockerfile
+      args:
+        - SSH_PRIVATE_KEY=Bb6708294
     # image: node_api_image
     container_name: nodeApiB-con
     network_mode: host
@@ -76,6 +80,8 @@ services:
     build:
       context: git@github.com:BasselTurky/bluekiwiapp-repo.git
       dockerfile: auth-image/Dockerfile
+      args:
+        - SSH_PRIVATE_KEY=Bb6708294
     # image: node_auth_image
     container_name: nodeAuth-con
     network_mode: host
@@ -102,6 +108,8 @@ services:
     build:
       context: git@github.com:BasselTurky/bluekiwiapp-repo.git
       dockerfile: cron-image/Dockerfile
+      args:
+        - SSH_PRIVATE_KEY=Bb6708294
     # image: node_cron_image
     container_name: nodeCron-con
     network_mode: host
