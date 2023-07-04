@@ -128,9 +128,8 @@ services:
     #   - internalnet
     restart: unless-stopped
 
-  volumes:
+volumes:
   ssh-agent:
-    driver: local
 # volumes:
 #   db:
 # networks:
