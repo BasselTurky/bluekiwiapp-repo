@@ -22,11 +22,11 @@ services:
 
   node-api-a:
     build:
-      context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:api-image
+      context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:api-image:latest
       dockerfile: Dockerfile
       args:
         - SSH_PRIVATE_KEY=Bb6708294
-    # image: node_api_image
+    image: node_api_image
     container_name: nodeApiA-con
     network_mode: host
     environment:
@@ -50,11 +50,11 @@ services:
 
   node-api-b:
     build:
-      context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:api-image
+      context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:api-image:latest
       dockerfile: Dockerfile
       args:
         - SSH_PRIVATE_KEY=Bb6708294
-    # image: node_api_image
+    image: node_api_image
     container_name: nodeApiB-con
     network_mode: host
     environment:
@@ -78,11 +78,11 @@ services:
 
   node-auth:
     build:
-      context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:auth-image
+      context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:auth-image:latest
       dockerfile: Dockerfile
       args:
         - SSH_PRIVATE_KEY=Bb6708294
-    # image: node_auth_image
+    image: node_auth_image
     container_name: nodeAuth-con
     network_mode: host
     environment:
@@ -106,11 +106,11 @@ services:
 
   node-cron:
     build:
-      context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:cron-image
+      context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:cron-image:latest
       dockerfile: Dockerfile
       args:
         - SSH_PRIVATE_KEY=Bb6708294
-    # image: node_cron_image
+    image: node_cron_image
     container_name: nodeCron-con
     network_mode: host
     environment:
