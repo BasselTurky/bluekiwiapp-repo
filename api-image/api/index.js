@@ -69,7 +69,7 @@ app.listen(port, () => console.log(`Server running on port ${port}`));
 // app.use(express.json({ limit: "4mb" }));
 
 app.get("/api", (req, res) => {
-  res.send(`Hello, this is api server on port ${port}`);
+  res.send(`Hello, this is api server on port ${port} wa7wa7`);
 });
 
 app.post("/api/save-coin", async (req, res) => {
