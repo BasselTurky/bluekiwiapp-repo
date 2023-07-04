@@ -21,6 +21,7 @@ const {
 } = require("./functions/createTransactionEmail");
 const { createCollectionTable } = require("./functions/createCollectionTable");
 
+const x = 5;
 /* Middleware*/
 app.use(bodyParser.json());
 
