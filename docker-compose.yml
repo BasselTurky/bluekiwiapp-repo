@@ -1,35 +1,19 @@
 version: "3"
 
 services:
-  # mysqldb:
-  #   image: mysql:latest
-  #   container_name: mysql-con
-  #   environment:
-  #     - MYSQL_ROOT_PASSWORD=password
-  #     - MYSQL_DATABASE=bluedb
-  #     - MYSQL_PASSWORD=password
-  #   ports:
-  #     - "3306:3306"
-  #   volumes:
-  #     - ./db:/var/lib/mysql
-  #   healthcheck:
-  #     test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-  #     timeout: 20s
-  #     retries: 10
-  #   networks:
-  #     - internalnet
-  #   restart: unless-stopped
-
   node-api-a:
     build:
       context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:api-image
       dockerfile: Dockerfile
       args:
-        - SSH_PRIVATE_KEY=SSH_PRIVATE_KEY
+        - SSH_PRIVATE_KEY=MYKEY
     image: node_api_image
     container_name: nodeApiA-con
     network_mode: host
+    volumes:
+      - ssh-agent:/ssh-agent
     environment:
+      - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
@@ -57,7 +41,11 @@ services:
     image: node_api_image
     container_name: nodeApiB-con
     network_mode: host
+
+    volumes:
+      - ssh-agent:/ssh-agent
     environment:
+      - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
@@ -85,7 +73,11 @@ services:
     image: node_auth_image
     container_name: nodeAuth-con
     network_mode: host
+
+    volumes:
+      - ssh-agent:/ssh-agent
     environment:
+      - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
@@ -113,7 +105,11 @@ services:
     image: node_cron_image
     container_name: nodeCron-con
     network_mode: host
+
+    volumes:
+      - ssh-agent:/ssh-agent
     environment:
+      - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
@@ -131,7 +127,30 @@ services:
     # networks:
     #   - internalnet
     restart: unless-stopped
+
+  volumes:
+  ssh-agent:
+    driver: local
 # volumes:
 #   db:
 # networks:
 #   internalnet:
+
+# mysqldb:
+#   image: mysql:latest
+#   container_name: mysql-con
+#   environment:
+#     - MYSQL_ROOT_PASSWORD=password
+#     - MYSQL_DATABASE=bluedb
+#     - MYSQL_PASSWORD=password
+#   ports:
+#     - "3306:3306"
+#   volumes:
+#     - ./db:/var/lib/mysql
+#   healthcheck:
+#     test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+#     timeout: 20s
+#     retries: 10
+#   networks:
+#     - internalnet
+#   restart: unless-stopped
