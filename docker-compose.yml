@@ -6,7 +6,7 @@ services:
       context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:api-image
       dockerfile: Dockerfile
       args:
-        - SSH_PRIVATE_KEY=MYKEY
+        SSH_AUTH_SOCK: $SSH_AUTH_SOCK
       # ssh:
       #   - default
     image: node_api_image
@@ -21,7 +21,7 @@ services:
     volumes:
       - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
     environment:
-      - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
+      # - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
       # - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
@@ -47,7 +47,7 @@ services:
       context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:api-image
       dockerfile: Dockerfile
       args:
-        - SSH_PRIVATE_KEY=SSH_PRIVATE_KEY
+        SSH_AUTH_SOCK: $SSH_AUTH_SOCK
       # ssh:
       #   - default
     image: node_api_image
@@ -62,7 +62,7 @@ services:
     volumes:
       - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
     environment:
-      - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
+      # - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
       # - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
@@ -88,7 +88,7 @@ services:
       context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:auth-image
       dockerfile: Dockerfile
       args:
-        - SSH_PRIVATE_KEY=SSH_PRIVATE_KEY
+        SSH_AUTH_SOCK: $SSH_AUTH_SOCK
       # ssh:
       #   - default
     image: node_auth_image
@@ -104,7 +104,7 @@ services:
     volumes:
       - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
     environment:
-      - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
+      # - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
       # - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
@@ -130,7 +130,7 @@ services:
       context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:cron-image
       dockerfile: Dockerfile
       args:
-        - SSH_PRIVATE_KEY=SSH_PRIVATE_KEY
+        SSH_AUTH_SOCK: $SSH_AUTH_SOCK
       # ssh:
       #   - default
     image: node_cron_image
@@ -146,7 +146,7 @@ services:
     volumes:
       - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
     environment:
-      - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
+      # - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
       # - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
