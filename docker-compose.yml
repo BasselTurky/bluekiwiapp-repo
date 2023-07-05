@@ -26,7 +26,8 @@ services:
       - $SSH_AUTH_SOCK:/ssh-agent
     environment:
       - SSH_AUTH_SOCK=/ssh-agent
-      # - SSH_AUTH_SOCK=/tmp/ssh-XXXXXXUsodGn/agent.199630
+      - SSH_AUTH_SOCK=/tmp/ssh-XXXXXXgO0BFH/agent.200042
+      - SSH_PASSPHRASE=Bb6708294
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
@@ -71,7 +72,8 @@ services:
     environment:
       - SSH_AUTH_SOCK=/ssh-agent
       # - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
-      # - SSH_AUTH_SOCK=/tmp/ssh-XXXXXXUsodGn/agent.199630
+      - SSH_AUTH_SOCK=/tmp/ssh-XXXXXXgO0BFH/agent.200042
+      - SSH_PASSPHRASE=Bb6708294
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
@@ -117,7 +119,8 @@ services:
     environment:
       - SSH_AUTH_SOCK=/ssh-agent
       # - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
-      # - SSH_AUTH_SOCK=/tmp/ssh-XXXXXXUsodGn/agent.199630
+      - SSH_AUTH_SOCK=/tmp/ssh-XXXXXXgO0BFH/agent.200042
+      - SSH_PASSPHRASE=Bb6708294
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
@@ -161,9 +164,10 @@ services:
     volumes:
       - $SSH_AUTH_SOCK:/ssh-agent
     environment:
-      - SSH_AUTH_SOCK=/ssh-agent
+      # - SSH_AUTH_SOCK=/ssh-agent
       # - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
-      # - SSH_AUTH_SOCK=/tmp/ssh-XXXXXXUsodGn/agent.199630
+      - SSH_AUTH_SOCK=/tmp/ssh-XXXXXXgO0BFH/agent.200042
+      - SSH_PASSPHRASE=Bb6708294
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
