@@ -7,13 +7,14 @@ services:
       dockerfile: Dockerfile
       args:
         - SSH_PRIVATE_KEY=MYKEY
-      ssh:
-        - default
+      # ssh:
+      #   - default
     image: node_api_image
     container_name: nodeApiA-con
     network_mode: host
     volumes:
       - ssh-agent:/ssh-agent
+      - /home/blue/.ssh/id_rsa:/root/.ssh/id_rsa
     environment:
       - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
@@ -41,14 +42,14 @@ services:
       dockerfile: Dockerfile
       args:
         - SSH_PRIVATE_KEY=SSH_PRIVATE_KEY
-      ssh:
-        - default
+      # ssh:
+      #   - default
     image: node_api_image
     container_name: nodeApiB-con
     network_mode: host
-
     volumes:
       - ssh-agent:/ssh-agent
+      - /home/blue/.ssh/id_rsa:/root/.ssh/id_rsa
     environment:
       - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
@@ -76,14 +77,15 @@ services:
       dockerfile: Dockerfile
       args:
         - SSH_PRIVATE_KEY=SSH_PRIVATE_KEY
-      ssh:
-        - default
+      # ssh:
+      #   - default
     image: node_auth_image
     container_name: nodeAuth-con
     network_mode: host
 
     volumes:
       - ssh-agent:/ssh-agent
+      - /home/blue/.ssh/id_rsa:/root/.ssh/id_rsa
     environment:
       - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
@@ -111,14 +113,15 @@ services:
       dockerfile: Dockerfile
       args:
         - SSH_PRIVATE_KEY=SSH_PRIVATE_KEY
-      ssh:
-        - default
+      # ssh:
+      #   - default
     image: node_cron_image
     container_name: nodeCron-con
     network_mode: host
 
     volumes:
       - ssh-agent:/ssh-agent
+      - /home/blue/.ssh/id_rsa:/root/.ssh/id_rsa
     environment:
       - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
