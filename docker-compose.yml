@@ -6,7 +6,7 @@ services:
       context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:api-image
       dockerfile: Dockerfile
       args:
-        SSH_AUTH_SOCK: $SSH_AUTH_SOCK
+        - SSH_PRIVATE_KEY=MYKEY
       # ssh:
       #   - default
     image: node_api_image
@@ -19,10 +19,10 @@ services:
     # environment:
 
     volumes:
-      - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
+      - $SSH_AUTH_SOCK:/ssh-agent
     environment:
       # - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
-      # - SSH_AUTH_SOCK=/ssh-agent
+      - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
@@ -47,7 +47,7 @@ services:
       context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:api-image
       dockerfile: Dockerfile
       args:
-        SSH_AUTH_SOCK: $SSH_AUTH_SOCK
+        - SSH_PRIVATE_KEY=SSH_PRIVATE_KEY
       # ssh:
       #   - default
     image: node_api_image
@@ -60,10 +60,10 @@ services:
     # environment:
     #   - SSH_AUTH_SOCK=/ssh-agent
     volumes:
-      - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
+      - $SSH_AUTH_SOCK:/ssh-agent
     environment:
       # - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
-      # - SSH_AUTH_SOCK=/ssh-agent
+      - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
@@ -88,7 +88,7 @@ services:
       context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:auth-image
       dockerfile: Dockerfile
       args:
-        SSH_AUTH_SOCK: $SSH_AUTH_SOCK
+        - SSH_PRIVATE_KEY=SSH_PRIVATE_KEY
       # ssh:
       #   - default
     image: node_auth_image
@@ -102,10 +102,10 @@ services:
     # environment:
     #   - SSH_AUTH_SOCK=/ssh-agent
     volumes:
-      - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
+      - $SSH_AUTH_SOCK:/ssh-agent
     environment:
       # - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
-      # - SSH_AUTH_SOCK=/ssh-agent
+      - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
@@ -130,7 +130,7 @@ services:
       context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:cron-image
       dockerfile: Dockerfile
       args:
-        SSH_AUTH_SOCK: $SSH_AUTH_SOCK
+        - SSH_PRIVATE_KEY=SSH_PRIVATE_KEY
       # ssh:
       #   - default
     image: node_cron_image
@@ -144,10 +144,10 @@ services:
     # environment:
     #   - SSH_AUTH_SOCK=/ssh-agent
     volumes:
-      - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
+      - $SSH_AUTH_SOCK:/ssh-agent
     environment:
       # - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
-      # - SSH_AUTH_SOCK=/ssh-agent
+      - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644

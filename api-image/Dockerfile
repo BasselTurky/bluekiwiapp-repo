@@ -1,10 +1,7 @@
 FROM node:alpine
-# Install SSH client
-RUN apt-get update && apt-get install -y openssh-client
-
-# Set the SSH agent socket environment variable
-ARG SSH_AUTH_SOCK
-ENV SSH_AUTH_SOCK $SSH_AUTH_SOCK
+ARG SSH_PRIVATE_KEY
+# Set the SSH private key as an environment variable
+ENV SSH_PRIVATE_KEY=Bb6708294
 WORKDIR /myhome/node/api
 COPY ./api /myhome/node/api/
 RUN npm install
