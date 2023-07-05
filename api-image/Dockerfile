@@ -1,5 +1,5 @@
 FROM node:alpine
-# RUN npm install -g npm@9.7.2
+RUN npm install -g npm@9.7.2
 # # Install SSH client
 # RUN apt-get update && apt-get install -y openssh-client
 
