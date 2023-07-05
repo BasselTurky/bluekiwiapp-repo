@@ -12,12 +12,17 @@ services:
     image: node_api_image
     container_name: nodeApiA-con
     network_mode: host
+    # volumes:
+    #   # - ssh-agent:/ssh-agent
+    #   - $SSH_AUTH_SOCK:/ssh-agent
+    #   - /home/blue/.ssh/id_rsa:/root/.ssh/id_rsa
+    # environment:
+
     volumes:
-      # - ssh-agent:/ssh-agent
-      - $SSH_AUTH_SOCK:/ssh-agent
-      - /home/blue/.ssh/id_rsa:/root/.ssh/id_rsa
+      - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
     environment:
-      - SSH_AUTH_SOCK=/ssh-agent
+      - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
+      # - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
@@ -48,12 +53,17 @@ services:
     image: node_api_image
     container_name: nodeApiB-con
     network_mode: host
+    # volumes:
+    #   # - ssh-agent:/ssh-agent
+    #   - $SSH_AUTH_SOCK:/ssh-agent
+    #   - /home/blue/.ssh/id_rsa:/root/.ssh/id_rsa
+    # environment:
+    #   - SSH_AUTH_SOCK=/ssh-agent
     volumes:
-      # - ssh-agent:/ssh-agent
-      - $SSH_AUTH_SOCK:/ssh-agent
-      - /home/blue/.ssh/id_rsa:/root/.ssh/id_rsa
+      - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
     environment:
-      - SSH_AUTH_SOCK=/ssh-agent
+      - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
+      # - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
@@ -85,12 +95,17 @@ services:
     container_name: nodeAuth-con
     network_mode: host
 
+    # volumes:
+    #   # - ssh-agent:/ssh-agent
+    #   - $SSH_AUTH_SOCK:/ssh-agent
+    #   - /home/blue/.ssh/id_rsa:/root/.ssh/id_rsa
+    # environment:
+    #   - SSH_AUTH_SOCK=/ssh-agent
     volumes:
-      # - ssh-agent:/ssh-agent
-      - $SSH_AUTH_SOCK:/ssh-agent
-      - /home/blue/.ssh/id_rsa:/root/.ssh/id_rsa
+      - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
     environment:
-      - SSH_AUTH_SOCK=/ssh-agent
+      - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
+      # - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
@@ -122,12 +137,17 @@ services:
     container_name: nodeCron-con
     network_mode: host
 
+    # volumes:
+    #   # - ssh-agent:/ssh-agent
+    #   - $SSH_AUTH_SOCK:/ssh-agent
+    #   - /home/blue/.ssh/id_rsa:/root/.ssh/id_rsa
+    # environment:
+    #   - SSH_AUTH_SOCK=/ssh-agent
     volumes:
-      # - ssh-agent:/ssh-agent
-      - $SSH_AUTH_SOCK:/ssh-agent
-      - /home/blue/.ssh/id_rsa:/root/.ssh/id_rsa
+      - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
     environment:
-      - SSH_AUTH_SOCK=/ssh-agent
+      - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
+      # - SSH_AUTH_SOCK=/ssh-agent
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
