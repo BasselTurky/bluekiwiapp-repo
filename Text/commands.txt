@@ -10,7 +10,8 @@ then,
 
 open Putty:
 
-cd into bluekiwiapp-repo
+cd into bluekiwiapp-repo 
+   cd workspace/bluekiwiapp-repo
 docker-compose down
 git pull origin
-docker-compose up -d build
+docker-compose up -d --build
