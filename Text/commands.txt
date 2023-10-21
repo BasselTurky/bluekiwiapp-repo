@@ -1,0 +1,16 @@
+// to push new updates to digitalocean
+
+in CMD:
+cd C:\Users\101\Desktop\Bluekiwiapp-linux
+git add .
+git commit -m "text"
+git push -u origin main
+
+then,
+
+open Putty:
+
+cd into bluekiwiapp-repo
+docker-compose down
+git pull origin
+docker-compose up -d build
