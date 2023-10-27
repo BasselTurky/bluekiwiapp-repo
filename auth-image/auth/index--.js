@@ -278,6 +278,7 @@ app.post("/auth/login-data", async (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const date = req.body.date;
+  const device_id = req.body.device_id;
 
   // Get email from database if available
   try {
@@ -306,12 +307,62 @@ app.post("/auth/login-data", async (req, res) => {
     // Create token
 
     const token = jwt.sign(
-      { email: email, uid: user.uid },
+      { email: email, device_id: device_id, uid: user.uid },
       process.env.JWT_SECRET,
       {
         expiresIn: 2592000,
       }
     );
+
+    // If device id = null : fresh login
+
+    if (user.device_id === null) {
+      await pool.query(
+        `UPDATE users  SET device_id = '${device_id}' WHERE email = '${email}'`
+      );
+
+      return res.send({ type: "success", token: token });
+    }
+
+    // Check device id: if true -> same user | if false different user
+
+    if (!(await check_device_id(email, device_id))) {
+      //generate OTP
+      let one_time_password = verification_code(6);
+
+      // put it into token to be sent to user frontend and stored in SecureStore
+
+      const otp_token = jwt.sign(
+        { otp: one_time_password, email: email },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: 600,
+        }
+      );
+
+      const mailOptions = {
+        from: process.env.SERVER_EMAIL,
+        to: email,
+        subject: "Confirmation code",
+        html: createOtpEmail(one_time_password),
+      };
+
+      transporter.sendMail(mailOptions, function (error, info) {
+        if (error) {
+          console.log(error);
+        } else {
+          console.log("Warning email sent to: ", email, " at: ", date);
+        }
+      });
+
+      return res.send({ type: "verify", otp_token: otp_token, email: email });
+    }
+
+    // if everything is fine and not first time login:
+
+    // await pool.query(
+    //     `UPDATE users  SET device_id = '${device_id}' WHERE email = '${email}'`
+    //   );
 
     return res.send({ type: "success", token: token });
   } catch (error) {
@@ -368,16 +419,12 @@ app.post(`/auth/verify-otp`, async (req, res) => {
 
 app.post("/auth/check-token", async (req, res) => {
   // check if token expired or wrong device
-  try {
-    let token = req.body.token;
-    let check_result = await checkToken(token);
+  let token = req.body.token;
+  let check_result = await check_device_id_from_token(token);
 
-    if (check_result.boolean) {
-      return res.json("pass");
-    } else {
-      return res.json("error");
-    }
-  } catch (error) {
+  if (check_result.boolean) {
+    return res.json("pass");
+  } else {
     return res.json("error");
   }
 });
@@ -385,28 +432,25 @@ app.post("/auth/check-token", async (req, res) => {
 // Create refresh token
 
 app.post("/auth/refresh-token", async (req, res) => {
-  try {
-    let token = req.body.token;
-    let check_result = await checkToken(token);
+  let token = req.body.token;
+  let check_result = await check_device_id_from_token(token);
 
-    if (check_result.boolean) {
-      let email = check_result.email;
-      let uid = check_result.uid;
+  if (check_result.boolean) {
+    let email = check_result.email;
+    let device_id = check_result.device_id;
+    let uid = check_result.uid;
 
-      const token = jwt.sign(
-        { email: email, uid: uid },
-        process.env.JWT_SECRET,
-        {
-          expiresIn: 2592000,
-        }
-      );
+    const token = jwt.sign(
+      { email: email, device_id: device_id, uid: uid },
+      process.env.JWT_SECRET,
+      {
+        expiresIn: 2592000,
+      }
+    );
 
-      return res.send({ type: "pass", token: token });
-    } else {
-      return res.send({ type: "expired", message: "Session expired." });
-    }
-  } catch (error) {
-    return res.send({ type: "error", message: "Session expired." });
+    return res.send({ type: "pass", token: token });
+  } else {
+    return res.send({ type: "expired", message: "Session expired." });
   }
 });
 
@@ -499,7 +543,7 @@ app.post("/auth/reset-password", async (req, res) => {
 app.post("/auth/user", async (req, res) => {
   try {
     let token = req.body.token;
-    let check_result = await checkToken(token);
+    let check_result = await check_device_id_from_token(token);
     console.log(check_result);
     if (check_result.boolean) {
       let email = check_result.email;
@@ -509,7 +553,7 @@ app.post("/auth/user", async (req, res) => {
 
       return res.send({ type: "success", userInfo: result[0] });
     } else {
-      return res.send({ type: "expired" });
+      return res.send({ type: "wrong-device" });
     }
   } catch (error) {
     console.log(error);
@@ -678,25 +722,6 @@ async function check_device_id(email, device_id) {
   } else {
     // someone else
     return false;
-  }
-}
-async function checkToken(token) {
-  try {
-    let decoded = jwt.verify(token, process.env.JWT_SECRET);
-    let email = decoded.email;
-    let uid = decoded.uid;
-    return { boolean: true, email: email, uid: uid };
-  } catch (error) {
-    if (error.name === "JsonWebTokenError" && error.message === "jwt expired") {
-      // Token has expired
-      console.error("Token has expired");
-      // You can handle the expiration as needed, such as forcing the user to log in again
-    } else {
-      // Other JWT verification errors
-      console.error("JWT verification error:", error.message);
-      // You can handle other JWT verification errors here.
-    }
-    return { boolean: false };
   }
 }
 
