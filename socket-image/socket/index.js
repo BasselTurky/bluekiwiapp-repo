@@ -9,9 +9,11 @@ app.use(cors({ origin: "*" }));
 const pool = require("./database");
 
 const server = http.createServer(app);
-const io = socketIo(server);
-
-io.origins("*:*");
+const io = socketIo(server, {
+  cors: {
+    origin: "*",
+  },
+});
 
 io.on("connection", (socket) => {
   console.log("A user connected ", socket.id);
