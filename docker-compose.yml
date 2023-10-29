@@ -14,7 +14,7 @@ services:
       - DB_USER=bluekiwi
       - DB_PASS=kiwi@1117734644
       - DB_NAME=bluedb
-      - SERVER_PORT=3010
+      - SERVER_PORT=3004
       - JWT_SECRET=6708294
       - TRANSPORTER_EMAIL_PASS=Bb6708294
       - SERVER_EMAIL=invite.me.application@hotmail.com
