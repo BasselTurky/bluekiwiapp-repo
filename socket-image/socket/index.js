@@ -13,7 +13,7 @@ app.use(
 
 const server = http.createServer(app);
 const io = socketIo(server);
-app.get("/ws", (req, res) => {
+app.get("/socket", (req, res) => {
   res.send("hello");
 });
 io.on("connection", (socket) => {
