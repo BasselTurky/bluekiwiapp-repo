@@ -8,6 +8,8 @@ services:
     image: socket_image
     container_name: socket-con
     network_mode: host
+    ports:
+      - "3004:3004"
     environment:
       - SSH_PASSPHRASE=Bb6708294
       - DB_HOST=127.0.0.1

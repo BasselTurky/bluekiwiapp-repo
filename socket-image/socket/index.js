@@ -3,25 +3,21 @@ const express = require("express");
 const app = express();
 // const server = require("http").createServer(app);
 const socketIo = require("socket.io");
-const port = process.env.SERVER_PORT;
+
 const cors = require("cors");
-app.use(cors({ origin: "*" }));
-const pool = require("./database");
+app.use(
+  cors({
+    origin: "*",
+  })
+);
 
 const server = http.createServer(app);
-const io = socketIo(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"],
-  },
-});
-
+const io = socketIo(server);
 app.get("/ws", (req, res) => {
-  res.send(`Hello, this is socket.io server running on port ${port}`);
+  res.send("hello");
 });
-
 io.on("connection", (socket) => {
-  console.log("A user connected ", socket.id);
+  console.log("A user connected");
 
   socket.on("disconnect", () => {
     console.log("User disconnected");
@@ -30,6 +26,7 @@ io.on("connection", (socket) => {
   // You can add more event handlers here for real-time interactions.
 });
 
+const port = 3004;
 server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
