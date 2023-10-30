@@ -19,6 +19,10 @@ app.get("/ws", (req, res) => {
 io.on("connection", (socket) => {
   console.log("A user connected");
 
+  socket.on("error", (error) => {
+    console.error(error);
+  });
+
   socket.on("disconnect", () => {
     console.log("User disconnected");
   });
