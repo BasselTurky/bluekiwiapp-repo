@@ -13,9 +13,9 @@ app.use(
 
 const server = http.createServer(app);
 const io = socketIo(server);
-app.get("/socket", (req, res) => {
-  res.send("hello");
-});
+// app.get("/socket", (req, res) => {
+//   res.send("hello");
+// });
 io.on("connection", (socket) => {
   console.log("A user connected");
 
@@ -30,7 +30,8 @@ io.on("connection", (socket) => {
   // You can add more event handlers here for real-time interactions.
 });
 
-const port = 3004;
+// const port = 3004;
+const port = process.env.SERVER_PORT;
 server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
