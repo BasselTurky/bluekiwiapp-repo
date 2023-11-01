@@ -21,6 +21,7 @@ services:
       - TRANSPORTER_EMAIL_PASS=Bb6708294
       - SERVER_EMAIL=invite.me.application@hotmail.com
       - SMTP_NAME=bluekiwiapp.com
+      - SSH_AUTH_SOCK=$SSH_AUTH_SOCK
     restart: unless-stopped
 
   node-api-a:
