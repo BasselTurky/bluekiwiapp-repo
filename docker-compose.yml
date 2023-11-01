@@ -1,30 +1,30 @@
 version: "3"
 
 services:
-  node-socket:
-    build:
-      context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:socket-image
-      dockerfile: Dockerfile
-    image: socket_image
-    container_name: socket-con
-    network_mode: host
-    # ports:
-    #   - "3004:3004"
-    environment:
-      - SSH_PASSPHRASE=Bb6708294
-      - DB_HOST=127.0.0.1
-      - DB_USER=bluekiwi
-      - DB_PASS=kiwi@1117734644
-      - DB_NAME=bluedb
-      - SERVER_PORT=3004
-      - JWT_SECRET=6708294
-      - TRANSPORTER_EMAIL_PASS=Bb6708294
-      - SERVER_EMAIL=invite.me.application@hotmail.com
-      - SMTP_NAME=bluekiwiapp.com
-      - SSH_AUTH_SOCK=$SSH_AUTH_SOCK
-    restart: unless-stopped
-    volumes:
-      - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
+  # node-socket:
+  #   build:
+  #     context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:socket-image
+  #     dockerfile: Dockerfile
+  #   image: socket_image
+  #   container_name: socket-con
+  #   network_mode: host
+  #   # ports:
+  #   #   - "3004:3004"
+  #   environment:
+  #     - SSH_PASSPHRASE=Bb6708294
+  #     - DB_HOST=127.0.0.1
+  #     - DB_USER=bluekiwi
+  #     - DB_PASS=kiwi@1117734644
+  #     - DB_NAME=bluedb
+  #     - SERVER_PORT=3004
+  #     - JWT_SECRET=6708294
+  #     - TRANSPORTER_EMAIL_PASS=Bb6708294
+  #     - SERVER_EMAIL=invite.me.application@hotmail.com
+  #     - SMTP_NAME=bluekiwiapp.com
+  #     - SSH_AUTH_SOCK=$SSH_AUTH_SOCK
+  #   restart: unless-stopped
+  #   volumes:
+  #     - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
 
   node-api-a:
     build:
