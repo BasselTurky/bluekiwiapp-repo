@@ -23,6 +23,8 @@ services:
       - SMTP_NAME=bluekiwiapp.com
       - SSH_AUTH_SOCK=$SSH_AUTH_SOCK
     restart: unless-stopped
+    volumes:
+      - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
 
   node-api-a:
     build:
