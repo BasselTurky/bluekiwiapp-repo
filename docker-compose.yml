@@ -31,29 +31,11 @@ services:
       context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:api-image
       dockerfile: Dockerfile
 
-      # args:
-      #   - SSH_AUTH_SOCK=/ssh-agent
-
-      # ssh:
-      #   - default
     image: node_api_image
     container_name: nodeApiA-con
     network_mode: host
-    # volumes:
-    #   # - ssh-agent:/ssh-agent
-    #   - $SSH_AUTH_SOCK:/ssh-agent
-    #   - /home/blue/.ssh/id_rsa:/root/.ssh/id_rsa
-    # environment:
 
-    # volumes:
-    # - $SSH_AUTH_SOCK:/ssh-agent
-    # environment:
-    # - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
-    # volumes:
-    #   - $SSH_AUTH_SOCK:/ssh-agent
     environment:
-      # - SSH_AUTH_SOCK=/ssh-agent
-      # - SSH_AUTH_SOCK=/tmp/ssh-XXXXXXgO0BFH/agent.200042
       - SSH_PASSPHRASE=Bb6708294
       - DB_HOST=127.0.0.1
       - DB_USER=bluekiwi
