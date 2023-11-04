@@ -26,81 +26,55 @@ services:
     # volumes:
     #   - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
 
-  node-api-a:
-    build:
-      context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:api-image
-      dockerfile: Dockerfile
+  # node-api-a:
+  #   build:
+  #     context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:api-image
+  #     dockerfile: Dockerfile
 
-    image: node_api_image
-    container_name: nodeApiA-con
-    network_mode: host
+  #   image: node_api_image
+  #   container_name: nodeApiA-con
+  #   network_mode: host
 
-    environment:
-      - SSH_PASSPHRASE=Bb6708294
-      - DB_HOST=127.0.0.1
-      - DB_USER=bluekiwi
-      - DB_PASS=kiwi@1117734644
-      - DB_NAME=bluedb
-      - SERVER_PORT=3000
-      - JWT_SECRET=6708294
-      - TRANSPORTER_EMAIL_PASS=Bb6708294
-      - SERVER_EMAIL=invite.me.application@hotmail.com
-      - SMTP_NAME=bluekiwiapp.com
-    # command: sh -c 'eval "$(ssh-agent -s)" && sshpass -p "$SSH_PASSPHRASE" ssh-add /home/blue/.ssh/id_rsa'
-    # ports:
-    #   - "3000:3000"
-    # depends_on:
-    #   mysqldb:
-    #     condition: service_healthy
-    # networks:
-    #   - internalnet
-    restart: unless-stopped
+  #   environment:
+  #     - SSH_PASSPHRASE=Bb6708294
+  #     - DB_HOST=127.0.0.1
+  #     - DB_USER=bluekiwi
+  #     - DB_PASS=kiwi@1117734644
+  #     - DB_NAME=bluedb
+  #     - SERVER_PORT=3000
+  #     - JWT_SECRET=6708294
+  #     - TRANSPORTER_EMAIL_PASS=Bb6708294
+  #     - SERVER_EMAIL=invite.me.application@hotmail.com
+  #     - SMTP_NAME=bluekiwiapp.com
+  #   # command: sh -c 'eval "$(ssh-agent -s)" && sshpass -p "$SSH_PASSPHRASE" ssh-add /home/blue/.ssh/id_rsa'
+  #   # ports:
+  #   #   - "3000:3000"
+  #   # depends_on:
+  #   #   mysqldb:
+  #   #     condition: service_healthy
+  #   # networks:
+  #   #   - internalnet
+  #   restart: unless-stopped
 
-  node-api-b:
-    build:
-      context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:api-image
-      dockerfile: Dockerfile
-      # args:
-      #   - SSH_AUTH_SOCK=/ssh-agent
-      # ssh:
-      #   - default
-    image: node_api_image
-    container_name: nodeApiB-con
-    network_mode: host
-    # volumes:
-    #   # - ssh-agent:/ssh-agent
-    #   - $SSH_AUTH_SOCK:/ssh-agent
-    #   - /home/blue/.ssh/id_rsa:/root/.ssh/id_rsa
-    # environment:
-    #   - SSH_AUTH_SOCK=/ssh-agent
-    # volumes:
-    # - $SSH_AUTH_SOCK:/ssh-agent
-    # environment:
-    # volumes:
-    #   - $SSH_AUTH_SOCK:/ssh-agent
-    environment:
-      # - SSH_AUTH_SOCK=/ssh-agent
-      # - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
-      # - SSH_AUTH_SOCK=/tmp/ssh-XXXXXXgO0BFH/agent.200042
-      - SSH_PASSPHRASE=Bb6708294
-      - DB_HOST=127.0.0.1
-      - DB_USER=bluekiwi
-      - DB_PASS=kiwi@1117734644
-      - DB_NAME=bluedb
-      - SERVER_PORT=3001
-      - JWT_SECRET=6708294
-      - TRANSPORTER_EMAIL_PASS=Bb6708294
-      - SERVER_EMAIL=invite.me.application@hotmail.com
-      - SMTP_NAME=bluekiwiapp.com
-    # command: sh -c 'eval "$(ssh-agent -s)" && sshpass -p "$SSH_PASSPHRASE" ssh-add /home/blue/.ssh/id_rsa'
-    # ports:
-    #   - "3001:3001"
-    # depends_on:
-    #   mysqldb:
-    #     condition: service_healthy
-    # networks:
-    #   - internalnet
-    restart: unless-stopped
+  # node-api-b:
+  #   build:
+  #     context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:api-image
+  #     dockerfile: Dockerfile
+  #   image: node_api_image
+  #   container_name: nodeApiB-con
+  #   network_mode: host
+  #   environment:
+  #     - SSH_PASSPHRASE=Bb6708294
+  #     - DB_HOST=127.0.0.1
+  #     - DB_USER=bluekiwi
+  #     - DB_PASS=kiwi@1117734644
+  #     - DB_NAME=bluedb
+  #     - SERVER_PORT=3001
+  #     - JWT_SECRET=6708294
+  #     - TRANSPORTER_EMAIL_PASS=Bb6708294
+  #     - SERVER_EMAIL=invite.me.application@hotmail.com
+  #     - SMTP_NAME=bluekiwiapp.com
+  #   restart: unless-stopped
 
   node-auth:
     build:
