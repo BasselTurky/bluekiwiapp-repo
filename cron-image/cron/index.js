@@ -35,7 +35,7 @@ const job = new CronJob(
   "UTC"
 );
 
-job.start();
+// job.start();
 
 async function process_giveaway() {
   try {
