@@ -158,12 +158,11 @@ io.on("connection", (socket) => {
       item,
       year,
       month,
-      wallpaper_id_
+      wallpaper_id_,
+      email
     ) => {
       // let consumed_coins = req.body.consumed_coins;
       // let wallpaper_id = req.body.wallpaper_id;
-
-      let email = check_result.email;
 
       const user_data_query = await pool.query(
         `SELECT * FROM users WHERE email = '${email}'`
