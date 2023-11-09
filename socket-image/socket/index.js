@@ -44,7 +44,9 @@ io.on("connection", (socket) => {
           // disconnect older socket
           const olderSocketID = allUsers[email].socket;
           const olderSocket = io.sockets.sockets.get(olderSocketID);
-          olderSocket.emit("force-disconnect");
+          if (olderSocket) {
+            olderSocket.emit("force-disconnect");
+          }
         }
         // overwrite older socket
         allUsers[email] = { socket: socket.id };
@@ -126,7 +128,9 @@ io.on("connection", (socket) => {
         // disconnect older socket
         const olderSocketID = allUsers[email].socket;
         const olderSocket = io.sockets.sockets.get(olderSocketID);
-        olderSocket.emit("force-disconnect");
+        if (olderSocket) {
+          olderSocket.emit("force-disconnect");
+        }
       }
       // overwrite older socket
       allUsers[email] = { socket: socket.id };
