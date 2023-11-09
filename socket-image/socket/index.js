@@ -83,7 +83,7 @@ io.on("connection", (socket) => {
           // if true, add googleid to this email
 
           await pool.query(
-            `UPDATE users SET googleid = '${googleid}' WHERE email = '${email}'`
+            `UPDATE users SET googleid = ${googleid} WHERE email = '${email}'`
           );
         } else {
           // if not, add new user
@@ -118,7 +118,7 @@ io.on("connection", (socket) => {
           const uniqueId = name + "#" + paddedNumber;
 
           const queryResult = await pool.query(
-            `INSERT INTO users (name, discriminator, uid, email, googleid) VALUES ('${name}','${paddedNumber}','${uniqueId}','${email}','${googleid}')`
+            `INSERT INTO users (name, discriminator, uid, email, googleid) VALUES ('${name}','${paddedNumber}','${uniqueId}','${email}',${googleid})`
           );
         }
       }
