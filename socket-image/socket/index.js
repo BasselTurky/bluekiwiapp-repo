@@ -41,6 +41,7 @@ io.on("connection", (socket) => {
         const email = decoded.email;
 
         if (allUsers[email]) {
+          console.log(allUsers);
           // disconnect older socket
           const olderSocketID = allUsers[email].socket;
           const olderSocket = io.sockets.sockets.get(olderSocketID);
@@ -125,6 +126,7 @@ io.on("connection", (socket) => {
       // select user and send it to frontend
 
       if (allUsers[email]) {
+        console.log(allUsers);
         // disconnect older socket
         const olderSocketID = allUsers[email].socket;
         const olderSocket = io.sockets.sockets.get(olderSocketID);
