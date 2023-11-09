@@ -71,14 +71,14 @@ io.on("connection", (socket) => {
       const check_googleid = await pool.query(
         `SELECT EXISTS (SELECT 1 FROM users WHERE googleid = ${googleid})`
       );
-
+      console.log("check_googleid: ", check_googleid);
       if (!check_googleid) {
         // if not, check if email exists
 
         const check_email = await pool.query(
           `SELECT EXISTS (SELECT 1 FROM users WHERE = '${email}')`
         );
-
+        console.log("check_email: ", check_email);
         if (check_email) {
           // if true, add googleid to this email
 
