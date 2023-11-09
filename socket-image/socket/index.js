@@ -69,17 +69,17 @@ io.on("connection", (socket) => {
     try {
       // check if googleid exists
       const check_googleid = await pool.query(
-        `SELECT EXISTS (SELECT 1 FROM users WHERE googleid = ${googleid})`
+        `SELECT EXISTS (SELECT 1 FROM users WHERE googleid = ${googleid}) AS googleidExists`
       );
       console.log("check_googleid: ", check_googleid);
-      if (!check_googleid) {
+      if (!check_googleid[0].googleidExists) {
         // if not, check if email exists
 
         const check_email = await pool.query(
-          `SELECT EXISTS (SELECT 1 FROM users WHERE = '${email}')`
+          `SELECT EXISTS (SELECT 1 FROM users WHERE = '${email}') AS emailExists`
         );
         console.log("check_email: ", check_email);
-        if (check_email) {
+        if (check_email[0].emailExists) {
           // if true, add googleid to this email
 
           await pool.query(
