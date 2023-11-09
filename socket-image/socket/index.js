@@ -62,6 +62,89 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("check-google-user", async (googleid, email, name) => {
+    try {
+      // check if googleid exists
+      const check_googleid = await pool.query(
+        `SELECT EXISTS (SELECT 1 FROM users WHERE = '${googleid}')`
+      );
+
+      if (!check_googleid) {
+        // if not, check if email exists
+
+        const check_email = await pool.query(
+          `SELECT EXISTS (SELECT 1 FROM users WHERE = '${email}')`
+        );
+
+        if (check_email) {
+          // if true, add googleid to this email
+
+          await pool.query(
+            `UPDATE users SET googleid = '${googleid}' WHERE email = '${email}'`
+          );
+        } else {
+          // if not, add new user
+          let set = new Set(Array.from({ length: 9999 }, (_, i) => i + 1));
+          // check if name exists
+          const discriminatorQuery = await pool.query(
+            `SELECT discriminator FROM users WHERE name = '${name}'`
+          );
+          const discriminatorResult = Object.values(
+            JSON.parse(JSON.stringify(discriminatorQuery))
+          ); // array of objects
+          // extract discriminators from query
+          const discriminatorArray = discriminatorResult.map(
+            (result) => result.discriminator
+          );
+          // check if any discriminators are taken : for example Bassel#2224, Bassel#4852, Bassel#9983
+          if (discriminatorArray.length > 0) {
+            // delete existed discriminators from the Set
+            for (let i = 0; i < discriminatorArray.length; i++) {
+              set.delete(discriminatorArray[i]);
+            }
+          }
+          // select random number from Set
+          const availableDiscriminators = Array.from(set);
+          // check if all discriminators are taken
+          const randomIndex = Math.floor(
+            Math.random() * availableDiscriminators.length
+          );
+          const randomNumber = availableDiscriminators[randomIndex];
+          const paddedNumber = randomNumber.toString().padStart(4, "0");
+
+          const uniqueId = name + "#" + paddedNumber;
+
+          const queryResult = await pool.query(
+            `INSERT INTO users (name, discriminator, uid, email, googleid) VALUES ('${name}','${paddedNumber}','${uniqueId}','${email}','${googleid}')`
+          );
+        }
+      }
+
+      // select user and send it to frontend
+
+      if (allUsers[email]) {
+        // disconnect older socket
+        const olderSocketID = allUsers[email].socket;
+        const olderSocket = io.sockets.sockets.get(olderSocketID);
+        olderSocket.emit("force-disconnect");
+      }
+      // overwrite older socket
+      allUsers[email] = { socket: socket.id };
+
+      // send userinfo of {email} through the socket
+
+      const result = await pool.query(
+        `SELECT name, email, uid, coins FROM users WHERE email = '${email}' AND googleid = '${googleid}'`
+      );
+
+      socket.emit("userInfo", result[0]);
+
+      // emit full userData to "userInfo"
+    } catch (error) {
+      console.error(error);
+    }
+  });
+
   socket.on("account-delete", async (token, passwordInput) => {
     // decode token,
 
@@ -78,7 +161,7 @@ io.on("connection", (socket) => {
 
       const db_password = results[0].password;
       // check password:
-      if (await argon2.verify(db_password, password)) {
+      if (await argon2.verify(db_password, passwordInput)) {
         // if password correct:
 
         // force logout
@@ -200,28 +283,34 @@ io.on("connection", (socket) => {
     }
   );
 
-  socket.on("save-coin", async (token) => {
+  socket.on("save-coin", async (data) => {
     try {
-      const decoded = decodingToken(token);
-      if (decoded.email) {
-        let email = decoded.email;
+      let email;
 
-        // get current coins
-        let queryCoins = await pool.query(
-          `SELECT coins FROM users WHERE email = '${email}'`
-        );
-        let result = Object.values(JSON.parse(JSON.stringify(queryCoins)));
-
-        let db_coins = result[0].coins;
-        // save coin
-        let new_coins_amount = db_coins + 2;
-
-        await pool.query(
-          `UPDATE users SET coins = '${new_coins_amount}' WHERE email = '${email}'`
-        );
-
-        socket.emit("coin-saved");
+      if (data.type === "default") {
+        const decoded = decodingToken(data.token);
+        if (decoded.email) {
+          email = decoded.email;
+        }
+      } else if (data.type === "google") {
+        email = data.email;
       }
+
+      // get current coins
+      let queryCoins = await pool.query(
+        `SELECT coins FROM users WHERE email = '${email}'`
+      );
+      let result = Object.values(JSON.parse(JSON.stringify(queryCoins)));
+
+      let db_coins = result[0].coins;
+      // save coin
+      let new_coins_amount = db_coins + 2;
+
+      await pool.query(
+        `UPDATE users SET coins = '${new_coins_amount}' WHERE email = '${email}'`
+      );
+
+      socket.emit("coin-saved");
     } catch (error) {
       console.log(error);
     }
