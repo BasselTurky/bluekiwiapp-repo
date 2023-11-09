@@ -76,7 +76,7 @@ io.on("connection", (socket) => {
         // if not, check if email exists
 
         const check_email = await pool.query(
-          `SELECT EXISTS (SELECT 1 FROM users WHERE = '${email}') AS emailExists`
+          `SELECT EXISTS (SELECT 1 FROM users WHERE email = '${email}') AS emailExists`
         );
         console.log("check_email: ", check_email);
         if (check_email[0].emailExists) {
