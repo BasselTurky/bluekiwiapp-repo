@@ -66,7 +66,7 @@ io.on("connection", (socket) => {
     try {
       // check if googleid exists
       const check_googleid = await pool.query(
-        `SELECT EXISTS (SELECT 1 FROM users WHERE = '${googleid}')`
+        `SELECT EXISTS (SELECT 1 FROM users WHERE googleid = ${googleid})`
       );
 
       if (!check_googleid) {
@@ -134,7 +134,7 @@ io.on("connection", (socket) => {
       // send userinfo of {email} through the socket
 
       const result = await pool.query(
-        `SELECT name, email, uid, coins FROM users WHERE email = '${email}' AND googleid = '${googleid}'`
+        `SELECT name, email, uid, coins FROM users WHERE email = '${email}' AND googleid = ${googleid}`
       );
 
       socket.emit("userInfo", result[0]);
