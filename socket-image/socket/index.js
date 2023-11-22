@@ -289,9 +289,18 @@ io.on("connection", (socket) => {
     }
   );
 
-  socket.on("save-coin", async (data) => {
+  socket.on("save-coin", async (data, revenue) => {
     try {
       let email;
+      let gained_coins;
+
+      if (revenue.value >= 0.001 && revenue.value < 0.01) {
+        gained_coins = Math.floor(revenue.value / 0.001);
+      } else if (revenue.value >= 0.01) {
+        gained_coins = 10;
+      } else {
+        gained_coins = 0; // or another default value if necessary
+      }
 
       if (data.type === "default") {
         const decoded = decodingToken(data.token);
@@ -310,13 +319,13 @@ io.on("connection", (socket) => {
 
       let db_coins = result[0].coins;
       // save coin
-      let new_coins_amount = db_coins + 2;
+      let new_coins_amount = db_coins + gained_coins;
 
       await pool.query(
         `UPDATE users SET coins = '${new_coins_amount}' WHERE email = '${email}'`
       );
 
-      socket.emit("coin-saved");
+      socket.emit("coin-saved", new_coins_amount);
     } catch (error) {
       console.log(error);
     }
