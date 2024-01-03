@@ -16,11 +16,11 @@ const YOUR_JWT_SECRET = process.env.JWT_SECRET; // Replace with your JWT secret 
 
 const client = new OAuth2Client(YOUR_GOOGLE_CLIENT_ID);
 
-const verifyGoogleToken = async (googleIdToken) => {
+const verifyGoogleToken = async (clientId, googleIdToken) => {
   try {
     const ticket = await client.verifyIdToken({
       idToken: googleIdToken,
-      audience: YOUR_GOOGLE_CLIENT_ID,
+      audience: clientId,
     });
 
     const payload = ticket.getPayload();
@@ -187,10 +187,10 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("account-delete", async (token) => {
+  socket.on("account-delete", async (clientId, token) => {
     // decode token,
 
-    verifyGoogleToken(token);
+    verifyGoogleToken(clientId, token);
     // if (authType === "default") {
     //   let decoded = decodingToken(token);
 
