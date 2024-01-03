@@ -397,7 +397,11 @@ io.on("connection", (socket) => {
 
 // Error handler for authentication errors
 io.use((error, socket, next) => {
-  if (error.message.startsWith("Authentication error")) {
+  if (
+    error &&
+    error.message &&
+    error.message.startsWith("Authentication error")
+  ) {
     console.error(
       `Authentication error for socket ${socket.id}: ${error.message}`
     );
