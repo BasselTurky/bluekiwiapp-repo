@@ -7,6 +7,42 @@ const socketIo = require("socket.io");
 const jwt = require("jsonwebtoken");
 const pool = require("./database");
 const cors = require("cors");
+
+const { OAuth2Client } = require("google-auth-library");
+
+const YOUR_GOOGLE_CLIENT_ID =
+  "109153830656-tafdv45ti0dc8c2vs895gl9tlub28r0h.apps.googleusercontent.com"; // Replace with your Google client ID
+const YOUR_JWT_SECRET = process.env.JWT_SECRET; // Replace with your JWT secret key
+
+const client = new OAuth2Client(YOUR_GOOGLE_CLIENT_ID);
+
+const verifyGoogleToken = async (googleIdToken) => {
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: googleIdToken,
+      audience: YOUR_GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const userId = payload.sub;
+    const email = payload.email;
+    const name = payload.name;
+    console.log(
+      "🚀 ~ file: index.js:27 ~ verifyGoogleToken ~ :",
+      userId,
+      " ",
+      email,
+      " ",
+      name
+    );
+    // You can extract other user information as needed
+    // return { userId, email, name };
+  } catch (error) {
+    console.error("Error verifying Google token:", error);
+    throw new Error("Invalid Google token");
+  }
+};
+
 app.use(
   cors({
     origin: "*",
@@ -151,38 +187,45 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("account-delete", async (token, passwordInput) => {
+  socket.on("account-delete", async (authType, token) => {
     // decode token,
 
-    let decoded = decodingToken(token);
-    if (decoded) {
-      // if verified:
-      let email = decoded.email;
+    verifyGoogleToken(token);
+    // if (authType === "default") {
+    //   let decoded = decodingToken(token);
 
-      const queryResults = await pool.query(
-        `SELECT password FROM users WHERE email = '${email}'`
-      );
+    //   if (decoded) {
+    //     // if verified:
+    //     let email = decoded.email;
 
-      const results = Object.values(JSON.parse(JSON.stringify(queryResults)));
+    //     socket.emit("force-disconnect");
 
-      const db_password = results[0].password;
-      // check password:
-      if (await argon2.verify(db_password, passwordInput)) {
-        // if password correct:
-
-        // force logout
-        socket.emit("force-disconnect");
-        // make delete query
-        let result = await pool.query(
-          `DELETE FROM users WHERE email = '${email}'`
-        );
-        return res.send({ type: "success" });
-      } else {
-        socket.emit("toasts", { type: "error", message: "Incorrect Password" });
-      }
-    }
+    //     let result = await pool.query(
+    //       `DELETE FROM users WHERE email = '${email}'`
+    //     );
+    //   }
+    // }
   });
+  // const queryResults = await pool.query(
+  //   `SELECT password FROM users WHERE email = '${email}'`
+  // );
 
+  // const results = Object.values(JSON.parse(JSON.stringify(queryResults)));
+
+  // const db_password = results[0].password;
+  // check password:
+  // if (await argon2.verify(db_password, passwordInput)) {
+  // if password correct:
+
+  // force logout
+
+  // make delete query
+
+  // return res.send({ type: "success" });
+  // }
+  // else {
+  //   socket.emit("toasts", { type: "error", message: "Incorrect Password" });
+  // }
   socket.on("get-all-wallpapers", async () => {
     var date = new Date();
     var now_utc = Date.UTC(
