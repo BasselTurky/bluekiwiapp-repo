@@ -62,12 +62,22 @@ io.use((socket, next) => {
   const token = socket.handshake.auth.token;
 
   if (!token) {
-    return next(new Error("Authentication error: Token missing."));
+    const errorMessage = "Authentication error: Token missing.";
+    console.error(errorMessage);
+    socket.emit("authentication_error", { message: errorMessage });
+    socket.disconnect(true);
+    return;
+    // return next(new Error("Authentication error: Token missing."));
   }
 
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
-      return next(new Error("Authentication error: Invalid token."));
+      const errorMessage = "Authentication error: Invalid token.";
+      console.error(errorMessage);
+      socket.emit("authentication_error", { message: errorMessage });
+      socket.disconnect(true);
+      return;
+      // return next(new Error("Authentication error: Invalid token."));
     }
     console.log("🚀 ~ file: index.js:69 ~ jwt.verify ~ decoded:", decoded);
 
@@ -396,19 +406,19 @@ io.on("connection", (socket) => {
 });
 
 // Error handler for authentication errors
-io.use((error, socket, next) => {
-  if (
-    error &&
-    error.message &&
-    error.message.startsWith("Authentication error")
-  ) {
-    console.error(
-      `Authentication error for socket ${socket.id}: ${error.message}`
-    );
-    socket.disconnect(true); // Disconnect the socket with an authentication error
-  }
-  next(error);
-});
+// io.use((error, socket, next) => {
+//   if (
+//     error &&
+//     error.message &&
+//     error.message.startsWith("Authentication error")
+//   ) {
+//     console.error(
+//       `Authentication error for socket ${socket.id}: ${error.message}`
+//     );
+//     socket.disconnect(true); // Disconnect the socket with an authentication error
+//   }
+//   next(error);
+// });
 
 // const port = 3004;
 const port = process.env.SERVER_PORT;
