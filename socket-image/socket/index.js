@@ -11,7 +11,7 @@ const cors = require("cors");
 const { OAuth2Client } = require("google-auth-library");
 
 const YOUR_GOOGLE_CLIENT_ID =
-  "109153830656-tafdv45ti0dc8c2vs895gl9tlub28r0h.apps.googleusercontent.com"; // Replace with your Google client ID
+  "525928726797-45m49p0kdbcspgsicp72cl6d67fcabk0.apps.googleusercontent.com"; // Replace with your Google client ID
 const YOUR_JWT_SECRET = process.env.JWT_SECRET; // Replace with your JWT secret key
 
 const client = new OAuth2Client(YOUR_GOOGLE_CLIENT_ID);
@@ -39,7 +39,7 @@ const verifyGoogleToken = async (googleIdToken) => {
     // return { userId, email, name };
   } catch (error) {
     console.error("Error verifying Google token:", error);
-    throw new Error("Invalid Google token");
+    // throw new Error("Invalid Google token");
   }
 };
 
@@ -187,7 +187,7 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("account-delete", async (authType, token) => {
+  socket.on("account-delete", async (token) => {
     // decode token,
 
     verifyGoogleToken(token);
