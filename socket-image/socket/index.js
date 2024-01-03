@@ -205,6 +205,7 @@ io.on("connection", (socket) => {
     //     );
     //   }
     // }
+    console.log("done");
   });
   // const queryResults = await pool.query(
   //   `SELECT password FROM users WHERE email = '${email}'`
