@@ -10,38 +10,37 @@ const cors = require("cors");
 
 const { OAuth2Client } = require("google-auth-library");
 
-const YOUR_GOOGLE_CLIENT_ID =
-  "525928726797-45m49p0kdbcspgsicp72cl6d67fcabk0.apps.googleusercontent.com"; // Replace with your Google client ID
-const YOUR_JWT_SECRET = process.env.JWT_SECRET; // Replace with your JWT secret key
+const clientId = process.env.GOOGLE_CLIENT_ID; // Replace with your Google client ID
+const jwt_secret = process.env.JWT_SECRET; // Replace with your JWT secret key
 
-const client = new OAuth2Client(YOUR_GOOGLE_CLIENT_ID);
+const client = new OAuth2Client(clientId);
 
-const verifyGoogleToken = async (clientId, googleIdToken) => {
-  try {
-    const ticket = await client.verifyIdToken({
-      idToken: googleIdToken,
-      audience: clientId,
-    });
+// const verifyGoogleToken = async (googleIdToken) => {
+//   try {
+//     const ticket = await client.verifyIdToken({
+//       idToken: googleIdToken,
+//       audience: clientId,
+//     });
 
-    const payload = ticket.getPayload();
-    const userId = payload.sub;
-    const email = payload.email;
-    const name = payload.name;
-    console.log(
-      "🚀 ~ file: index.js:27 ~ verifyGoogleToken ~ :",
-      userId,
-      " ",
-      email,
-      " ",
-      name
-    );
-    // You can extract other user information as needed
-    // return { userId, email, name };
-  } catch (error) {
-    console.error("Error verifying Google token:", error);
-    // throw new Error("Invalid Google token");
-  }
-};
+//     const payload = ticket.getPayload();
+//     const userId = payload.sub;
+//     const email = payload.email;
+//     const name = payload.name;
+//     console.log(
+//       "🚀 ~ file: index.js:27 ~ verifyGoogleToken ~ :",
+//       userId,
+//       " ",
+//       email,
+//       " ",
+//       name
+//     );
+//     // You can extract other user information as needed
+//     return { userId, email, name };
+//   } catch (error) {
+//     console.error("Error verifying Google token:", error);
+//     // throw new Error("Invalid Google token");
+//   }
+// };
 
 app.use(
   cors({
@@ -58,6 +57,25 @@ const io = socketIo(server);
 var allUsers = {}; // currently online, inside the app
 
 // var allUser = { youser@gmail.com : { socket : UUID }}
+
+io.use((socket, next) => {
+  const token = socket.handshake.auth.token;
+
+  if (!token) {
+    return next(new Error("Authentication error: Token missing."));
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (err) {
+      return next(new Error("Authentication error: Invalid token."));
+    }
+    console.log("🚀 ~ file: index.js:69 ~ jwt.verify ~ decoded:", decoded);
+
+    // Attach user information to the socket for further use
+    socket.user = decoded;
+    next();
+  });
+});
 
 io.on("connection", (socket) => {
   console.log("A user connected");
@@ -187,10 +205,10 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("account-delete", async (clientId, token) => {
+  socket.on("account-delete", async (token) => {
     // decode token,
-
-    verifyGoogleToken(clientId, token);
+    console.log("🚀 ~ file: index.js:228 ~ socket.on ~ socket:", socket.user);
+    // verifyGoogleToken(token);
     // if (authType === "default") {
     //   let decoded = decodingToken(token);
 
@@ -207,6 +225,7 @@ io.on("connection", (socket) => {
     // }
     console.log("done");
   });
+
   // const queryResults = await pool.query(
   //   `SELECT password FROM users WHERE email = '${email}'`
   // );
@@ -374,6 +393,17 @@ io.on("connection", (socket) => {
       console.log(error);
     }
   });
+});
+
+// Error handler for authentication errors
+io.use((error, socket, next) => {
+  if (error.message.startsWith("Authentication error")) {
+    console.error(
+      `Authentication error for socket ${socket.id}: ${error.message}`
+    );
+    socket.disconnect(true); // Disconnect the socket with an authentication error
+  }
+  next(error);
 });
 
 // const port = 3004;

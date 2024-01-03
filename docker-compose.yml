@@ -18,6 +18,7 @@ services:
       - DB_NAME=bluedb
       - SERVER_PORT=3004
       - JWT_SECRET=6708294
+      - GOOGLE_CLIENT_ID=525928726797-45m49p0kdbcspgsicp72cl6d67fcabk0.apps.googleusercontent.com
       - TRANSPORTER_EMAIL_PASS=Bb6708294
       - SERVER_EMAIL=invite.me.application@hotmail.com
       - SMTP_NAME=bluekiwiapp.com
@@ -110,6 +111,7 @@ services:
       - DB_NAME=bluedb
       - SERVER_PORT=3002
       - JWT_SECRET=6708294
+      - GOOGLE_CLIENT_ID=525928726797-45m49p0kdbcspgsicp72cl6d67fcabk0.apps.googleusercontent.com
       - TRANSPORTER_EMAIL_PASS=Bb6708294
       - SERVER_EMAIL=invite.me.application@hotmail.com
       - SMTP_NAME=bluekiwiapp.com

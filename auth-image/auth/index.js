@@ -12,6 +12,12 @@ const request = require("request");
 const multer = require("multer");
 const rateLimit = require("express-rate-limit");
 
+const { OAuth2Client } = require("google-auth-library");
+
+const clientId = process.env.GOOGLE_CLIENT_ID;
+
+const client = new OAuth2Client(clientId);
+
 const pool = require("./database");
 const {
   createVerificationEmail,
@@ -659,6 +665,23 @@ app.post("/auth/account-delete-request", async (req, res) => {
   }
 });
 
+app.post("/auth/sign-google-idToken", async (req, res) => {
+  try {
+    const idToken = req.body.idToken;
+
+    const userInfo = await verifyGoogleToken(idToken);
+    console.log("🚀 ~ file: index.js:674 ~ app.post ~ userInfo:", userInfo);
+
+    const token = jwt.sign(userInfo, process.env.JWT_SECRET, {
+      expiresIn: 2592000,
+    });
+
+    return res.status(200).send({ token: token });
+  } catch (error) {
+    console.error(error);
+  }
+});
+
 async function check_device_id(email, device_id) {
   // get current device id
 
@@ -747,6 +770,33 @@ function verification_code(length) {
   }
   return result;
 }
+
+const verifyGoogleToken = async (googleIdToken) => {
+  try {
+    const ticket = await client.verifyIdToken({
+      idToken: googleIdToken,
+      audience: clientId,
+    });
+
+    const payload = ticket.getPayload();
+    const userId = payload.sub;
+    const email = payload.email;
+    const name = payload.name;
+    console.log(
+      "🚀 ~ file: index.js:27 ~ verifyGoogleToken ~ :",
+      userId,
+      " ",
+      email,
+      " ",
+      name
+    );
+    // You can extract other user information as needed
+    return { userId, email, name };
+  } catch (error) {
+    console.error("Error verifying Google token:", error);
+    // throw new Error("Invalid Google token");
+  }
+};
 
 // old check for token -----
 
