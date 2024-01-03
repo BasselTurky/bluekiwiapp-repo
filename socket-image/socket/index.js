@@ -216,6 +216,22 @@ io.on("connection", (socket) => {
   });
 
   socket.on("account-delete", async (token) => {
+    // const data_google = {
+    //   userId: "100820274001530825730",
+    //   email: "basselturky121@gmail.com",
+    //   name: "Bassel Turky",
+    //   iat: 1704277153,
+    //   exp: 1706869153,
+    // };
+    // const data_default = {
+    //   email: "basselturky121@gmail.com",
+    //   uid: "Blue#3244",
+    //   iat: 1704277811,
+    //   exp: 1706869811,
+    // };
+
+    const email = socket.user.email;
+
     // decode token,
     console.log("🚀 ~ file: index.js:228 ~ socket.on ~ socket:", socket.user);
     // verifyGoogleToken(token);
@@ -226,14 +242,13 @@ io.on("connection", (socket) => {
     //     // if verified:
     //     let email = decoded.email;
 
-    //     socket.emit("force-disconnect");
+    socket.emit("force-disconnect");
 
-    //     let result = await pool.query(
-    //       `DELETE FROM users WHERE email = '${email}'`
-    //     );
+    let result = await pool.query(`DELETE FROM users WHERE email = '${email}'`);
+
     //   }
     // }
-    console.log("done");
+    console.log(email, " delete done:  ", result);
   });
 
   // const queryResults = await pool.query(
