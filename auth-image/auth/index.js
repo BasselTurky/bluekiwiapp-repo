@@ -24,7 +24,9 @@ const {
 } = require("./functions/createVerificationEmail");
 const { createOtpEmail } = require("./functions/createOtpEmail");
 const { createResetPassEmail } = require("./functions/createResetPassEmail");
-
+const {
+  createGoogleUniqePassEmail,
+} = require("./functions/createGoogleUniqePassEmail");
 // Environment variables
 const port = process.env.SERVER_PORT;
 
@@ -323,6 +325,144 @@ app.post("/auth/login-data", async (req, res) => {
   } catch (error) {
     console.log(error);
     return res.send({ type: "error", message: "ErrorID: E007" });
+  }
+});
+
+app.post("/auth/sign-google-idToken", async (req, res) => {
+  // const data_google = {
+  //   userId: "100820274001530825730",
+  //   email: "basselturky121@gmail.com",
+  //   name: "Bassel Turky",
+  //   iat: 1704277153,
+  //   exp: 1706869153,
+  // };
+  // const data_default = {
+  //   email: "basselturky121@gmail.com",
+  //   uid: "Blue#3244",
+  //   iat: 1704277811,
+  //   exp: 1706869811,
+  // };
+
+  try {
+    const idToken = req.body.idToken;
+
+    const userInfo = await verifyGoogleToken(idToken);
+    console.log("🚀 ~ file: index.js:674 ~ app.post ~ userInfo:", userInfo);
+
+    const googleid = userInfo.userId;
+    const email = userInfo.email;
+    const name = userInfo.name;
+
+    //-------------------------------------------------------------
+    // check if googleid exists
+    const check_googleid = await pool.query(
+      `SELECT EXISTS (SELECT 1 FROM users WHERE googleid = ${googleid}) AS googleidExists`
+    );
+
+    // const fetchUserByGoogleId = await pool.query(
+    //   `SELECT * FROM users WHERE googleid = '${googleid}'`
+    // );
+
+    // const results = Object.values(JSON.parse(JSON.stringify(fetchUserByGoogleId)));
+
+    // console.log("check_googleid: ", check_googleid);
+    if (!check_googleid[0].googleidExists) {
+      // if (!results.length) {
+      // if not, check if email exists
+
+      const check_email = await pool.query(
+        `SELECT EXISTS (SELECT 1 FROM users WHERE email = '${email}') AS emailExists`
+      );
+      console.log("check_email: ", check_email);
+      if (check_email[0].emailExists) {
+        // if true, add googleid to this email
+
+        // a user with registeredd account : has email/password
+        // now add google id to this account
+        await pool.query(
+          `UPDATE users SET googleid = ${googleid} WHERE email = '${email}'`
+        );
+      } else {
+        // new user, fisrt time login with GoogleSignin
+
+        // if not, add new user
+        let set = new Set(Array.from({ length: 9999 }, (_, i) => i + 1));
+        // check if name exists
+        const discriminatorQuery = await pool.query(
+          `SELECT discriminator FROM users WHERE name = '${name}'`
+        );
+        const discriminatorResult = Object.values(
+          JSON.parse(JSON.stringify(discriminatorQuery))
+        ); // array of objects
+        // extract discriminators from query
+        const discriminatorArray = discriminatorResult.map(
+          (result) => result.discriminator
+        );
+        // check if any discriminators are taken : for example Bassel#2224, Bassel#4852, Bassel#9983
+        if (discriminatorArray.length > 0) {
+          // delete existed discriminators from the Set
+          for (let i = 0; i < discriminatorArray.length; i++) {
+            set.delete(discriminatorArray[i]);
+          }
+        }
+        // select random number from Set
+        const availableDiscriminators = Array.from(set);
+        // check if all discriminators are taken
+        const randomIndex = Math.floor(
+          Math.random() * availableDiscriminators.length
+        );
+        const randomNumber = availableDiscriminators[randomIndex];
+        const paddedNumber = randomNumber.toString().padStart(4, "0");
+
+        const uniqueId = name + "#" + paddedNumber;
+
+        //TODO generate password, add this password to the account
+        // and send it to the user in an email
+
+        const uniqePassword = generatePassword();
+        const hashedPassword = await argon2.hash(uniqePassword, 10);
+
+        const queryResult = await pool.query(
+          `INSERT INTO users (name, discriminator, uid, email, googleid, password) VALUES ('${name}','${paddedNumber}','${uniqueId}','${email}',${googleid},'${hashedPassword}')`
+        );
+
+        const mailOptions = {
+          // "invite.me.application@hotmail.com"
+          from: process.env.SERVER_EMAIL,
+          to: email,
+          subject: "Your Access Password",
+          html: createGoogleUniqePassEmail(uniqePassword),
+        };
+
+        transporter.sendMail(mailOptions, function (error, info) {
+          // return res.send({
+          //   type: "success",
+          //   message: `Email sent to: ${email} , please check all mails`,
+          // });
+          console.log(info);
+        });
+      }
+    }
+
+    //------------------------------------------------------------
+
+    const fetchUidByEmail = await pool.query(
+      `SELECT uid FROM users WHERE email = '${email}'`
+    );
+
+    const results = Object.values(JSON.parse(JSON.stringify(fetchUidByEmail)));
+    const user = results[0];
+
+    const tokenObject = { email: email, googleid: googleid, uid: user.uid };
+    // TODO if the email exists, retrun
+    // if not add new account
+    const token = jwt.sign(tokenObject, process.env.JWT_SECRET, {
+      expiresIn: 2592000,
+    });
+
+    return res.status(200).send({ token: token });
+  } catch (error) {
+    console.error(error);
   }
 });
 
@@ -665,23 +805,6 @@ app.post("/auth/account-delete-request", async (req, res) => {
   }
 });
 
-app.post("/auth/sign-google-idToken", async (req, res) => {
-  try {
-    const idToken = req.body.idToken;
-
-    const userInfo = await verifyGoogleToken(idToken);
-    console.log("🚀 ~ file: index.js:674 ~ app.post ~ userInfo:", userInfo);
-
-    const token = jwt.sign(userInfo, process.env.JWT_SECRET, {
-      expiresIn: 2592000,
-    });
-
-    return res.status(200).send({ token: token });
-  } catch (error) {
-    console.error(error);
-  }
-});
-
 async function check_device_id(email, device_id) {
   // get current device id
 
@@ -797,6 +920,24 @@ const verifyGoogleToken = async (googleIdToken) => {
     // throw new Error("Invalid Google token");
   }
 };
+
+function generatePassword() {
+  const uppercaseLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const lowercaseLetters = "abcdefghijklmnopqrstuvwxyz";
+  const numbers = "0123456789";
+  const symbols = "~`!@#$%^&*()_-+={[}]|:;\"'<,>.?/";
+
+  const allCharacters = uppercaseLetters + lowercaseLetters + numbers;
+  //  + symbols;
+
+  let password = "";
+  for (let i = 0; i < 16; i++) {
+    const randomIndex = Math.floor(Math.random() * allCharacters.length);
+    password += allCharacters.charAt(randomIndex);
+  }
+
+  return password;
+}
 
 // old check for token -----
 

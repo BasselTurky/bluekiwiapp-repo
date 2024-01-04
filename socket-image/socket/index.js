@@ -98,96 +98,18 @@ io.on("connection", (socket) => {
     console.log("User disconnected");
   });
 
-  socket.on("add-user", async (token) => {
-    try {
-      const decoded = decodingToken(token);
-      if (decoded) {
-        const email = decoded.email;
+  socket.on("disconnecting", () => {
+    const email = socket.user.email;
 
-        if (allUsers[email]) {
-          console.log(allUsers);
-          // disconnect older socket
-          const olderSocketID = allUsers[email].socket;
-          const olderSocket = io.sockets.sockets.get(olderSocketID);
-          if (olderSocket) {
-            olderSocket.emit("force-disconnect");
-          }
-        }
-        // overwrite older socket
-        allUsers[email] = { socket: socket.id };
-
-        // send userinfo of {email} through the socket
-
-        const result = await pool.query(
-          `SELECT name, email, uid, coins FROM users WHERE email = '${email}'`
-        );
-
-        socket.emit("userInfo", result[0]);
-      }
-    } catch (error) {
-      console.error("add-user database error", error);
-    }
+    delete allUsers[email];
   });
 
-  socket.on("check-google-user", async (googleid, email, name) => {
+  socket.on("add-user", async () => {
     try {
-      // check if googleid exists
-      const check_googleid = await pool.query(
-        `SELECT EXISTS (SELECT 1 FROM users WHERE googleid = ${googleid}) AS googleidExists`
-      );
-      console.log("check_googleid: ", check_googleid);
-      if (!check_googleid[0].googleidExists) {
-        // if not, check if email exists
-
-        const check_email = await pool.query(
-          `SELECT EXISTS (SELECT 1 FROM users WHERE email = '${email}') AS emailExists`
-        );
-        console.log("check_email: ", check_email);
-        if (check_email[0].emailExists) {
-          // if true, add googleid to this email
-
-          await pool.query(
-            `UPDATE users SET googleid = ${googleid} WHERE email = '${email}'`
-          );
-        } else {
-          // if not, add new user
-          let set = new Set(Array.from({ length: 9999 }, (_, i) => i + 1));
-          // check if name exists
-          const discriminatorQuery = await pool.query(
-            `SELECT discriminator FROM users WHERE name = '${name}'`
-          );
-          const discriminatorResult = Object.values(
-            JSON.parse(JSON.stringify(discriminatorQuery))
-          ); // array of objects
-          // extract discriminators from query
-          const discriminatorArray = discriminatorResult.map(
-            (result) => result.discriminator
-          );
-          // check if any discriminators are taken : for example Bassel#2224, Bassel#4852, Bassel#9983
-          if (discriminatorArray.length > 0) {
-            // delete existed discriminators from the Set
-            for (let i = 0; i < discriminatorArray.length; i++) {
-              set.delete(discriminatorArray[i]);
-            }
-          }
-          // select random number from Set
-          const availableDiscriminators = Array.from(set);
-          // check if all discriminators are taken
-          const randomIndex = Math.floor(
-            Math.random() * availableDiscriminators.length
-          );
-          const randomNumber = availableDiscriminators[randomIndex];
-          const paddedNumber = randomNumber.toString().padStart(4, "0");
-
-          const uniqueId = name + "#" + paddedNumber;
-
-          const queryResult = await pool.query(
-            `INSERT INTO users (name, discriminator, uid, email, googleid) VALUES ('${name}','${paddedNumber}','${uniqueId}','${email}',${googleid})`
-          );
-        }
-      }
-
-      // select user and send it to frontend
+      // const decoded = decodingToken(token);
+      // if (decoded) {
+      // const email = decoded.email;
+      const email = socket.user.email;
 
       if (allUsers[email]) {
         console.log(allUsers);
@@ -204,18 +126,110 @@ io.on("connection", (socket) => {
       // send userinfo of {email} through the socket
 
       const result = await pool.query(
-        `SELECT name, email, uid, coins FROM users WHERE email = '${email}' AND googleid = ${googleid}`
+        `SELECT name, email, uid, coins FROM users WHERE email = '${email}'`
       );
 
       socket.emit("userInfo", result[0]);
-
-      // emit full userData to "userInfo"
+      // }
     } catch (error) {
-      console.error(error);
+      console.error("add-user database error", error);
     }
   });
 
-  socket.on("account-delete", async (token) => {
+  // socket.on("check-google-user", async (googleid, email, name) => {
+  //   try {
+  //     // check if googleid exists
+  //     const check_googleid = await pool.query(
+  //       `SELECT EXISTS (SELECT 1 FROM users WHERE googleid = ${googleid}) AS googleidExists`
+  //     );
+  //     console.log("check_googleid: ", check_googleid);
+  //     if (!check_googleid[0].googleidExists) {
+  //       // if not, check if email exists
+
+  //       const check_email = await pool.query(
+  //         `SELECT EXISTS (SELECT 1 FROM users WHERE email = '${email}') AS emailExists`
+  //       );
+  //       console.log("check_email: ", check_email);
+  //       if (check_email[0].emailExists) {
+  //         // if true, add googleid to this email
+
+  //         // a user with registeredd account : has email/password
+  //         // now add google id to this account
+  //         await pool.query(
+  //           `UPDATE users SET googleid = ${googleid} WHERE email = '${email}'`
+  //         );
+  //       } else {
+  //         // new user, fisrt time login with GoogleSignin
+
+  //         // if not, add new user
+  //         let set = new Set(Array.from({ length: 9999 }, (_, i) => i + 1));
+  //         // check if name exists
+  //         const discriminatorQuery = await pool.query(
+  //           `SELECT discriminator FROM users WHERE name = '${name}'`
+  //         );
+  //         const discriminatorResult = Object.values(
+  //           JSON.parse(JSON.stringify(discriminatorQuery))
+  //         ); // array of objects
+  //         // extract discriminators from query
+  //         const discriminatorArray = discriminatorResult.map(
+  //           (result) => result.discriminator
+  //         );
+  //         // check if any discriminators are taken : for example Bassel#2224, Bassel#4852, Bassel#9983
+  //         if (discriminatorArray.length > 0) {
+  //           // delete existed discriminators from the Set
+  //           for (let i = 0; i < discriminatorArray.length; i++) {
+  //             set.delete(discriminatorArray[i]);
+  //           }
+  //         }
+  //         // select random number from Set
+  //         const availableDiscriminators = Array.from(set);
+  //         // check if all discriminators are taken
+  //         const randomIndex = Math.floor(
+  //           Math.random() * availableDiscriminators.length
+  //         );
+  //         const randomNumber = availableDiscriminators[randomIndex];
+  //         const paddedNumber = randomNumber.toString().padStart(4, "0");
+
+  //         const uniqueId = name + "#" + paddedNumber;
+
+  //         //TODO generate password, add this password to the account
+  //         // and send it to the user in an email
+
+  //         const queryResult = await pool.query(
+  //           `INSERT INTO users (name, discriminator, uid, email, googleid) VALUES ('${name}','${paddedNumber}','${uniqueId}','${email}',${googleid})`
+  //         );
+  //       }
+  //     }
+
+  //     // select user and send it to frontend
+
+  //     if (allUsers[email]) {
+  //       console.log(allUsers);
+  //       // disconnect older socket
+  //       const olderSocketID = allUsers[email].socket;
+  //       const olderSocket = io.sockets.sockets.get(olderSocketID);
+  //       if (olderSocket) {
+  //         olderSocket.emit("force-disconnect");
+  //       }
+  //     }
+  //     // overwrite older socket
+  //     allUsers[email] = { socket: socket.id };
+
+  //     // send userinfo of {email} through the socket
+
+  //     const result = await pool.query(
+  //       `SELECT name, email, uid, coins FROM users WHERE email = '${email}' AND googleid = ${googleid}`
+  //     );
+
+  //     socket.emit("userInfo", result[0]);
+
+  //     // emit full userData to "userInfo"
+  //   } catch (error) {
+  //     console.error(error);
+  //   }
+  // });
+
+  socket.on("account-delete", async () => {
     // const data_google = {
     //   userId: "100820274001530825730",
     //   email: "basselturky121@gmail.com",
@@ -335,12 +349,12 @@ io.on("connection", (socket) => {
       item,
       year,
       month,
-      wallpaper_id_,
-      email
+      wallpaper_id_
+      // email
     ) => {
       // let consumed_coins = req.body.consumed_coins;
       // let wallpaper_id = req.body.wallpaper_id;
-
+      const email = socket.user.email;
       const user_data_query = await pool.query(
         `SELECT * FROM users WHERE email = '${email}'`
       );
@@ -377,9 +391,9 @@ io.on("connection", (socket) => {
     }
   );
 
-  socket.on("save-coin", async (data, revenue) => {
+  socket.on("save-coin", async (revenue) => {
     try {
-      let email;
+      let email = socket.user.email;
       let gained_coins;
 
       if (revenue.value >= 0.001 && revenue.value < 0.01) {
@@ -390,14 +404,14 @@ io.on("connection", (socket) => {
         gained_coins = 0; // or another default value if necessary
       }
 
-      if (data.type === "default") {
-        const decoded = decodingToken(data.token);
-        if (decoded.email) {
-          email = decoded.email;
-        }
-      } else if (data.type === "google") {
-        email = data.email;
-      }
+      // if (data.type === "default") {
+      //   const decoded = decodingToken(data.token);
+      //   if (decoded.email) {
+      //     email = decoded.email;
+      //   }
+      // } else if (data.type === "google") {
+      //   email = data.email;
+      // }
 
       // get current coins
       let queryCoins = await pool.query(
