@@ -428,7 +428,7 @@ app.post("/auth/sign-google-idToken", async (req, res) => {
 
         const mailOptions = {
           // "invite.me.application@hotmail.com"
-          from: process.env.SERVER_EMAIL,
+          from: `"Blue Kiwi App" <${process.env.SERVER_EMAIL}>`,
           to: email,
           subject: "Your Access Password",
           html: createGoogleUniqePassEmail(uniqePassword),
