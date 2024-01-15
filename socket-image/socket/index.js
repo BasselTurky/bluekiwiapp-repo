@@ -306,17 +306,18 @@ io.on("connection", (socket) => {
   });
 
   socket.on("get-daily-wallpapers", async () => {
-    var date = new Date();
-    var now_utc = Date.UTC(
-      date.getUTCFullYear(),
-      date.getUTCMonth(),
-      date.getUTCDate(),
-      date.getUTCHours(),
-      date.getUTCMinutes(),
-      date.getUTCSeconds()
-    );
-    var date_string = new Date(now_utc).toISOString();
-    var today = date_string.substring(0, 10);
+    // var date = new Date();
+    // var now_utc = Date.UTC(
+    //   date.getUTCFullYear(),
+    //   date.getUTCMonth(),
+    //   date.getUTCDate(),
+    //   date.getUTCHours(),
+    //   date.getUTCMinutes(),
+    //   date.getUTCSeconds()
+    // );
+    // var date_string = new Date(now_utc).toISOString();
+    // var today = date_string.substring(0, 10);
+    var today = new Date().toISOString().split("T")[0];
 
     var day = today.substring(8);
 
