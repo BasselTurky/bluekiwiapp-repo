@@ -286,23 +286,26 @@ io.on("connection", (socket) => {
   //   socket.emit("toasts", { type: "error", message: "Incorrect Password" });
   // }
   socket.on("get-all-wallpapers", async () => {
-    var date = new Date();
-    var now_utc = Date.UTC(
-      date.getUTCFullYear(),
-      date.getUTCMonth(),
-      date.getUTCDate(),
-      date.getUTCHours(),
-      date.getUTCMinutes(),
-      date.getUTCSeconds()
-    );
-    var date_string = new Date(now_utc).toISOString();
-    var this_month = date_string.substring(0, 8) + "01";
+    // var date = new Date();
+    // var now_utc = Date.UTC(
+    //   date.getUTCFullYear(),
+    //   date.getUTCMonth(),
+    //   date.getUTCDate(),
+    //   date.getUTCHours(),
+    //   date.getUTCMinutes(),
+    //   date.getUTCSeconds()
+    // );
+    // var date_string = new Date(now_utc).toISOString();
+    // var this_month = date_string.substring(0, 8) + "01";
 
+    var today = new Date().toISOString().split("T")[0];
+    var this_month = today.substring(0, 8) + "01";
+    const customDate = "2024-3-23";
     const query_result = await pool.query(
-      `SELECT * FROM wallpapers WHERE date(date) < '${this_month}'`
+      `SELECT * FROM wallpapers WHERE date(date) < '${customDate}'`
     );
 
-    socket.emit("all-wallpapers", { result: query_result, date: this_month });
+    socket.emit("all-wallpapers", { result: query_result, date: customDate });
   });
 
   socket.on("get-daily-wallpapers", async () => {
