@@ -126,7 +126,7 @@ io.on("connection", (socket) => {
       // send userinfo of {email} through the socket
 
       const result = await pool.query(
-        `SELECT name, email, uid, coins FROM users WHERE email = '${email}'`
+        `SELECT name, email, uid, coins, last_x_giveaway, last_z_giveaway FROM users WHERE email = '${email}'`
       );
 
       socket.emit("userInfo", result[0]);
@@ -134,6 +134,69 @@ io.on("connection", (socket) => {
     } catch (error) {
       console.error("add-user database error", error);
     }
+  });
+
+  socket.on("get-giveaways-info", async () => {
+    const giveaway_x_query = await pool.query(`
+      SELECT
+          g.id,
+          u.uid,
+          p.date
+      FROM
+          bluedb.participants p
+      INNER JOIN
+          bluedb.users u ON p.userId = u.id
+      INNER JOIN
+          bluedb.giveaways g ON p.giveawayId = g.id
+      WHERE
+          g.status = 'active'
+          AND g.type = 'x'
+      ORDER BY
+          p.date DESC;
+    `);
+
+    const giveaway_x_query_result = Object.values(
+      JSON.parse(JSON.stringify(giveaway_x_query))
+    )[0];
+
+    const giveaway_x_id = giveaway_x_query_result.id;
+
+    const giveaway_z_query = await pool.query(`
+    SELECT
+        g.id,
+        u.uid,
+        p.date
+    FROM
+        bluedb.participants p
+    INNER JOIN
+        bluedb.users u ON p.userId = u.id
+    INNER JOIN
+        bluedb.giveaways g ON p.giveawayId = g.id
+    WHERE
+        g.status = 'active'
+        AND g.type = 'z'
+    ORDER BY
+        p.date DESC;
+  `);
+
+    const giveaway_z_query_result = Object.values(
+      JSON.parse(JSON.stringify(giveaway_z_query))
+    )[0];
+
+    const giveaway_z_id = giveaway_z_query_result.id;
+
+    const giveaway_x_data = {
+      id: giveaway_x_id,
+      type: "x",
+      participants: giveaway_x_query,
+    };
+    const giveaway_z_data = {
+      id: giveaway_z_id,
+      type: "z",
+      participants: giveaway_z_query,
+    };
+
+    socket.emit("giveawayInfo", giveaway_x_data, giveaway_z_data);
   });
 
   // socket.on("check-google-user", async (googleid, email, name) => {

@@ -344,14 +344,28 @@ app.post("/auth/sign-google-idToken", async (req, res) => {
   // };
 
   try {
+    // let ticket
     const idToken = req.body.idToken;
+    // try {
+    const ticket = await client.verifyIdToken({
+      idToken: idToken,
+      audience: clientId, // Replace YOUR_CLIENT_ID with your actual client ID
+    });
+    // } catch (error) {
 
-    const userInfo = await verifyGoogleToken(idToken);
-    console.log("🚀 ~ file: index.js:674 ~ app.post ~ userInfo:", userInfo);
+    // }
 
-    const googleid = userInfo.userId;
-    const email = userInfo.email;
-    const name = userInfo.name;
+    // const userInfo = await verifyGoogleToken(idToken);
+    // console.log("🚀 ~ file: index.js:674 ~ app.post ~ userInfo:", userInfo);
+    // if google token expired?
+    const payload = ticket.getPayload();
+    // const userId = payload.sub;
+    // const email = payload.email;
+    // const name = payload.name;
+
+    const googleid = payload.userId;
+    const email = payload.email;
+    const name = payload.name;
 
     //-------------------------------------------------------------
     // check if googleid exists
@@ -359,13 +373,6 @@ app.post("/auth/sign-google-idToken", async (req, res) => {
       `SELECT EXISTS (SELECT 1 FROM users WHERE googleid = ${googleid}) AS googleidExists`
     );
 
-    // const fetchUserByGoogleId = await pool.query(
-    //   `SELECT * FROM users WHERE googleid = '${googleid}'`
-    // );
-
-    // const results = Object.values(JSON.parse(JSON.stringify(fetchUserByGoogleId)));
-
-    // console.log("check_googleid: ", check_googleid);
     if (!check_googleid[0].googleidExists) {
       // if (!results.length) {
       // if not, check if email exists
@@ -463,6 +470,14 @@ app.post("/auth/sign-google-idToken", async (req, res) => {
     return res.status(200).send({ token: token });
   } catch (error) {
     console.error(error);
+    if (error.message && error.message.includes("Token used too late")) {
+      console.log("Google token expired. Please sign in again.");
+      return res
+        .status(401)
+        .send({ error: "Google token expired. Please sign in again." });
+    } else {
+      return res.status(500).send({ error: "Internal Server Error" });
+    }
   }
 });
 
@@ -896,10 +911,27 @@ function verification_code(length) {
 
 const verifyGoogleToken = async (googleIdToken) => {
   try {
-    const ticket = await client.verifyIdToken({
-      idToken: googleIdToken,
-      audience: clientId,
-    });
+    // const ticket = await client.verifyIdToken({
+    //   idToken: googleIdToken,
+    //   audience: clientId,
+    // });
+    let ticket;
+
+    try {
+      ticket = await client.verifyIdToken({
+        idToken: googleIdToken,
+        audience: clientId, // Replace YOUR_CLIENT_ID with your actual client ID
+      });
+    } catch (error) {
+      if (error.message && error.message.includes("Token used too late")) {
+        console.log("Google token expired. Please sign in again.");
+        return res
+          .status(401)
+          .json({ error: "Google token expired. Please sign in again." });
+      } else {
+        throw error; // Re-throw the error for other types of errors
+      }
+    }
 
     const payload = ticket.getPayload();
     const userId = payload.sub;
@@ -918,6 +950,7 @@ const verifyGoogleToken = async (googleIdToken) => {
   } catch (error) {
     console.error("Error verifying Google token:", error);
     // throw new Error("Invalid Google token");
+    return res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
