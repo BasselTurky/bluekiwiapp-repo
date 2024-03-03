@@ -363,7 +363,7 @@ app.post("/auth/sign-google-idToken", async (req, res) => {
     // const email = payload.email;
     // const name = payload.name;
     console.log(payload);
-    const googleid = payload.userId;
+    const googleid = payload.sub;
     const email = payload.email;
     const name = payload.name;
 
