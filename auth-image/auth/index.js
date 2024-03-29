@@ -1,6 +1,6 @@
 const express = require("express");
 const app = express();
-
+const path = require("path");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 
@@ -40,7 +40,7 @@ app.use(
     origin: "*",
   })
 );
-
+app.use(express.static(path.join(__dirname, "public")));
 app.set("view-engine", "ejs");
 
 app.get("/auth", (req, res) => {
@@ -76,6 +76,9 @@ const transporter = nodemailer.createTransport({
   tls: {
     rejectUnauthorized: false,
   },
+});
+app.get("/auth/delete-form-view", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 app.post("/auth/delete-form", async (req, res) => {
   try {
