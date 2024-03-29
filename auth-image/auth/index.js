@@ -40,7 +40,7 @@ app.use(
     origin: "*",
   })
 );
-app.use(express.static(path.join(__dirname, "public")));
+// app.use(express.static(path.join(__dirname, "public")));
 app.set("view-engine", "ejs");
 
 app.get("/auth", (req, res) => {
@@ -77,9 +77,14 @@ const transporter = nodemailer.createTransport({
     rejectUnauthorized: false,
   },
 });
-app.get("/auth/delete-form-view", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
-});
+// app.get("/auth/delete-form-view", (req, res) => {
+//   res.sendFile(path.join(__dirname, "public", "index.html"));
+// });
+app.use(
+  "/auth/delete-form-view",
+  express.static(path.join(__dirname, "public"))
+);
+
 app.post("/auth/delete-form", async (req, res) => {
   try {
     console.log(req.body);
