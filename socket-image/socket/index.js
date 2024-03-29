@@ -136,6 +136,22 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("get-user-giveaway-history", async () => {
+    const email = socket.user.email;
+    const history_query = await pool.query(`
+    
+      SELECT p.winner,p.received, g.*
+      FROM participants p
+      JOIN users u ON p.userUid = u.uid
+      JOIN giveaways g ON p.giveawayId = g.id
+      WHERE u.email = '${email}'
+      ORDER BY g.id DESC;
+    
+    `);
+
+    socket.emit("giveaway-history", history_query);
+  });
+
   socket.on("get-giveaways-info", async () => {
     const giveaway_x_query = await pool.query(`
       SELECT

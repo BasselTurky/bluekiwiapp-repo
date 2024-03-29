@@ -77,7 +77,16 @@ const transporter = nodemailer.createTransport({
     rejectUnauthorized: false,
   },
 });
-
+app.post("/auth/delete-form", async (req, res) => {
+  try {
+    console.log(req.body);
+    res.send("Form data received successfully!");
+  } catch (error) {
+    console.log(error);
+    res.send("Form data not received");
+  }
+  // get the data
+});
 // used - Register
 
 // add rate limiter : to do
@@ -476,7 +485,9 @@ app.post("/auth/sign-google-idToken", async (req, res) => {
         .status(401)
         .send({ error: "Google token expired. Please sign in again." });
     } else {
-      return res.status(500).send({ error: "Internal Server Error" });
+      return res
+        .status(500)
+        .send({ error: "Internal Server Error", message: error });
     }
   }
 });
