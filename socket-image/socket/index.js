@@ -126,7 +126,7 @@ io.on("connection", (socket) => {
       // send userinfo of {email} through the socket
 
       const result = await pool.query(
-        `SELECT name, email, uid, coins, last_x_giveaway, last_z_giveaway FROM users WHERE email = '${email}'`
+        `SELECT name, email, uid, coins FROM users WHERE email = '${email}'`
       );
 
       socket.emit("userInfo", result[0]);
@@ -138,6 +138,7 @@ io.on("connection", (socket) => {
 
   socket.on("get-user-giveaway-history", async () => {
     const email = socket.user.email;
+
     const history_query = await pool.query(`
     
       SELECT p.winner,p.received, g.*
@@ -153,6 +154,8 @@ io.on("connection", (socket) => {
   });
 
   socket.on("get-giveaways-info", async () => {
+    // get list of participants in active giveaway
+    // aka data in active giveaway table
     const giveaway_x_query = await pool.query(`
       SELECT
           g.id,
@@ -161,7 +164,7 @@ io.on("connection", (socket) => {
       FROM
           bluedb.participants p
       INNER JOIN
-          bluedb.users u ON p.userId = u.id
+          bluedb.users u ON p.id = u.id
       INNER JOIN
           bluedb.giveaways g ON p.giveawayId = g.id
       WHERE
