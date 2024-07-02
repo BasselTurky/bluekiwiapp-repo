@@ -186,11 +186,11 @@ io.on("connection", (socket) => {
         u.uid,
         p.date
     FROM
-        bluedb.participants p
+        participants p
     INNER JOIN
-        bluedb.users u ON p.userId = u.id
+        users u ON p.id = u.id
     INNER JOIN
-        bluedb.giveaways g ON p.giveawayId = g.id
+        giveaways g ON p.giveawayId = g.id
     WHERE
         g.status = 'active'
         AND g.type = 'z'
