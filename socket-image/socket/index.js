@@ -197,7 +197,7 @@ io.on("connection", (socket) => {
     ORDER BY
         p.date DESC;
   `);
-
+    console.log(giveaway_z_query);
     const giveaway_z_query_result = Object.values(
       JSON.parse(JSON.stringify(giveaway_z_query))
     )[0];
