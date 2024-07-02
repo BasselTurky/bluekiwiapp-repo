@@ -19,7 +19,7 @@
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.6.2",
     "nodemailer": "^6.9.6",
-    "socket.io": "^4.7.2",
+    "socket.io": "^4.7.5",
     "util": "^0.12.5",
     "uuid": "^9.0.1"
   }
