@@ -177,7 +177,7 @@ io.on("connection", (socket) => {
     const giveaway_x_query_result = Object.values(
       JSON.parse(JSON.stringify(giveaway_x_query))
     )[0];
-
+    console.log(giveaway_x_query_result);
     const giveaway_x_id = giveaway_x_query_result.id;
 
     const giveaway_z_query = await pool.query(`
@@ -201,7 +201,7 @@ io.on("connection", (socket) => {
     const giveaway_z_query_result = Object.values(
       JSON.parse(JSON.stringify(giveaway_z_query))
     )[0];
-
+    console.log(giveaway_z_query_result);
     const giveaway_z_id = giveaway_z_query_result.id;
 
     const giveaway_x_data = {
