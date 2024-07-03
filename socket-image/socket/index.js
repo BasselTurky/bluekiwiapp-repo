@@ -126,7 +126,7 @@ io.on("connection", (socket) => {
 
       // send userinfo of {email} through the socket
       const userQuery = `
-      SELECT name, email, uid, coins FROM users WHERE email = '?'
+      SELECT name, email, uid, coins FROM users WHERE email = ?
       `;
       console.log(`
       SELECT name, email, uid, coins FROM users WHERE email = '${email}'
@@ -156,7 +156,7 @@ io.on("connection", (socket) => {
       FROM participants p
       JOIN users u ON p.userUid = u.uid
       JOIN giveaways g ON p.giveawayId = g.id
-      WHERE u.email = '?'
+      WHERE u.email = ?
       ORDER BY g.id DESC; 
     `;
     const [rows, fields] = await pool.execute(historyQuery, [email]);
@@ -394,7 +394,7 @@ io.on("connection", (socket) => {
       socket.emit("force-disconnect");
 
       const query = `
-      DELETE FROM users WHERE email = '?'
+      DELETE FROM users WHERE email = ?
       `;
       const [rows, fields] = await pool.execute(query, [email]);
 
@@ -453,7 +453,7 @@ io.on("connection", (socket) => {
     const customDate = "2024-3-23";
 
     const query = `
-    SELECT * FROM wallpapers WHERE date(date) < '?'
+    SELECT * FROM wallpapers WHERE date(date) < ?
     `;
 
     const [rows, fields] = await pool.execute(query, [customDate]);
@@ -494,7 +494,7 @@ io.on("connection", (socket) => {
       // );
 
       const query = `
-      SELECT * FROM wallpapers WHERE date >= '?' AND date <= '?' ORDER BY downloads DESC LIMIT ?
+      SELECT * FROM wallpapers WHERE date >= ? AND date <= ? ORDER BY downloads DESC LIMIT ?
       `;
 
       query_result = await pool.execute(query, [
@@ -508,7 +508,7 @@ io.on("connection", (socket) => {
       // );
 
       const query = `
-      SELECT * FROM wallpapers WHERE date(date) = '?'
+      SELECT * FROM wallpapers WHERE date(date) = ?
       `;
       query_result = await pool.execute(query, [today]);
     }
@@ -533,7 +533,7 @@ io.on("connection", (socket) => {
       const email = socket.user.email;
 
       const userDataQuery = `
-      SELECT * FROM users WHERE email = '?'
+      SELECT * FROM users WHERE email = ?
       `;
       const [userRows, userFields] = await pool.execute(userDataQuery, [email]);
       // const user_data_query = await pool.query(
@@ -551,7 +551,7 @@ io.on("connection", (socket) => {
 
         // consume coins
         const updateQuery = `
-        UPDATE users SET coins = ? WHERE email = '?'
+        UPDATE users SET coins = ? WHERE email = ?
         `;
         const [updateRows, updateFields] = await pool.execute(updateQuery, [
           new_coins_amount,
@@ -634,7 +634,7 @@ io.on("connection", (socket) => {
 
       // get current coins
       const query = `
-      SELECT coins FROM users WHERE email = '?'
+      SELECT coins FROM users WHERE email = ?
       `;
       const [rows, fields] = await pool.execute(query, [email]);
 
@@ -648,7 +648,7 @@ io.on("connection", (socket) => {
       let new_coins_amount = db_coins + gained_coins;
 
       const updateQuery = `
-      UPDATE users SET coins = '?' WHERE email = '?'
+      UPDATE users SET coins = ? WHERE email = ?
       `;
       const [updateRows, updateFields] = await pool.execute(updateQuery, [
         new_coins_amount,
