@@ -6,6 +6,7 @@ const socketIo = require("socket.io");
 
 const jwt = require("jsonwebtoken");
 const pool = require("./database");
+const poolAsync = require("./databasePromise");
 const cors = require("cors");
 
 const { OAuth2Client } = require("google-auth-library");
@@ -156,6 +157,24 @@ io.on("connection", (socket) => {
   socket.on("get-giveaways-info", async () => {
     // get list of participants in active giveaway
     // aka data in active giveaway table
+    const query = `
+      SELECT
+          g.id,
+          u.uid,
+          p.date
+      FROM
+          participants p
+      INNER JOIN
+          users u ON p.id = u.id
+      INNER JOIN
+          giveaways g ON p.giveawayId = g.id
+      WHERE
+          g.status = 'active'
+          AND g.type = 'x'
+      ORDER BY
+          p.date DESC;`;
+    const rows = await poolAsync.execute(query);
+    console.log(rows);
     const giveaway_x_query = await pool.query(`
       SELECT
           g.id,
