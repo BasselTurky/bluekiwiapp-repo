@@ -133,6 +133,7 @@ io.on("connection", (socket) => {
       // const result = await pool.query(
       //   `SELECT name, email, uid, coins FROM users WHERE email = '${email}'`
       // );
+      console.log(rows);
       if (rows.length) {
         console.log("user itself: ", rows[0]);
         socket.emit("userInfo", rows[0]);
