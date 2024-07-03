@@ -49,7 +49,7 @@ const pool = mysql
     user: process.env.DB_USER,
     password: process.env.DB_PASS,
     database: process.env.DB_NAME,
-    connectTimeout: 10000, // Increase timeout to 10 seconds
+    // connectTimeout: 10000, // Increase timeout to 10 seconds
   })
   .promise(); // Use the promise-based API
 
