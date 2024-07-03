@@ -27,12 +27,13 @@ pool.getConnection((err, connection) => {
       console.error("Database connection was refused.");
     }
   }
-
+  console.log("here4");
   if (connection) {
     console.log("Database Connected!");
+    console.log("here2");
     connection.release();
   }
-
+  console.log("here3");
   return;
 });
 
