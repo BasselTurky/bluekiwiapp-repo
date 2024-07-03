@@ -15,6 +15,7 @@ const pool = mysql.createPool({
 // DB_NAME=inviteme
 
 pool.getConnection((err, connection) => {
+  console.log("here db");
   if (err) {
     if (err.code === "PROTOCOL_CONNECTION_LOST") {
       console.error("Database connection was closed.");
