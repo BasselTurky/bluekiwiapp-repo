@@ -176,6 +176,7 @@ io.on("connection", (socket) => {
     const [rows] = await poolAsync.execute(query);
     console.log("this is rows ", rows);
     console.log("first row ", rows[0]);
+
     const giveaway_x_query = await pool.query(`
       SELECT
           g.id,
@@ -197,7 +198,7 @@ io.on("connection", (socket) => {
     const giveaway_x_query_result = Object.values(
       JSON.parse(JSON.stringify(giveaway_x_query))
     )[0];
-    console.log(giveaway_x_query_result);
+    console.log("normal q ", giveaway_x_query_result);
     const giveaway_x_id = giveaway_x_query_result.id;
 
     const giveaway_z_query = await pool.query(`
@@ -217,25 +218,25 @@ io.on("connection", (socket) => {
     ORDER BY
         p.date DESC;
   `);
-    console.log(giveaway_z_query);
-    const giveaway_z_query_result = Object.values(
-      JSON.parse(JSON.stringify(giveaway_z_query))
-    )[0];
-    console.log(giveaway_z_query_result);
-    const giveaway_z_id = giveaway_z_query_result.id;
+    // console.log(giveaway_z_query);
+    // const giveaway_z_query_result = Object.values(
+    //   JSON.parse(JSON.stringify(giveaway_z_query))
+    // )[0];
+    // console.log(giveaway_z_query_result);
+    // const giveaway_z_id = giveaway_z_query_result.id;
 
-    const giveaway_x_data = {
-      id: giveaway_x_id,
-      type: "x",
-      participants: giveaway_x_query,
-    };
-    const giveaway_z_data = {
-      id: giveaway_z_id,
-      type: "z",
-      participants: giveaway_z_query,
-    };
+    // const giveaway_x_data = {
+    //   id: giveaway_x_id,
+    //   type: "x",
+    //   participants: giveaway_x_query,
+    // };
+    // const giveaway_z_data = {
+    //   id: giveaway_z_id,
+    //   type: "z",
+    //   participants: giveaway_z_query,
+    // };
 
-    socket.emit("giveawayInfo", giveaway_x_data, giveaway_z_data);
+    // socket.emit("giveawayInfo", giveaway_x_data, giveaway_z_data);
   });
 
   // socket.on("check-google-user", async (googleid, email, name) => {
