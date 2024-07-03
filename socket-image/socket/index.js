@@ -134,7 +134,7 @@ io.on("connection", (socket) => {
       //   `SELECT name, email, uid, coins FROM users WHERE email = '${email}'`
       // );
       if (rows.length) {
-        console.log(rows[0]);
+        console.log("user itself: ", rows[0]);
         socket.emit("userInfo", rows[0]);
       }
 
@@ -279,12 +279,12 @@ io.on("connection", (socket) => {
     const giveaway_x_data = {
       id: giveaway_x_id,
       type: "x",
-      participants: giveaway_x_query,
+      participants: rows,
     };
     const giveaway_z_data = {
       id: giveaway_z_id,
       type: "z",
-      participants: giveaway_z_query,
+      participants: zRows,
     };
 
     socket.emit("giveawayInfo", giveaway_x_data, giveaway_z_data);
