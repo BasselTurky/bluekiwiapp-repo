@@ -5,8 +5,8 @@ const app = express();
 const socketIo = require("socket.io");
 
 const jwt = require("jsonwebtoken");
-const pool = require("./database");
-const poolAsync = require("./databasePromise");
+// const pool = require("./database");
+const pool = require("./databasePromise");
 const cors = require("cors");
 
 const { OAuth2Client } = require("google-auth-library");
