@@ -173,8 +173,9 @@ io.on("connection", (socket) => {
           AND g.type = 'x'
       ORDER BY
           p.date DESC;`;
-    const rows = await poolAsync.execute(query);
-    console.log(rows);
+    const [rows] = await poolAsync.execute(query);
+    console.log("this is rows ", rows);
+    console.log("first row ", rows[0]);
     const giveaway_x_query = await pool.query(`
       SELECT
           g.id,
