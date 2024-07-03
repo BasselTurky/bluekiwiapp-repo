@@ -173,7 +173,7 @@ io.on("connection", (socket) => {
           AND g.type = 'x'
       ORDER BY
           p.date DESC;`;
-    const rows = await pool.execute(query);
+    const [rows, fields] = await pool.execute(query);
     console.log("this is rows ", rows);
     // console.log("first row ", rows[0]);
 
