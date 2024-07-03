@@ -125,12 +125,19 @@ io.on("connection", (socket) => {
       allUsers[email] = { socket: socket.id };
 
       // send userinfo of {email} through the socket
+      const userQuery = `
+      SELECT name, email, uid, coins FROM users WHERE email = '?'
+      `;
+      const [rows, fields] = await pool.execute(userQuery, [email]);
 
-      const result = await pool.query(
-        `SELECT name, email, uid, coins FROM users WHERE email = '${email}'`
-      );
+      // const result = await pool.query(
+      //   `SELECT name, email, uid, coins FROM users WHERE email = '${email}'`
+      // );
+      if (rows.length) {
+        console.log(rows[0]);
+        socket.emit("userInfo", rows[0]);
+      }
 
-      socket.emit("userInfo", result[0]);
       // }
     } catch (error) {
       console.error("add-user database error", error);
@@ -140,24 +147,37 @@ io.on("connection", (socket) => {
   socket.on("get-user-giveaway-history", async () => {
     const email = socket.user.email;
 
-    const history_query = await pool.query(`
-    
+    const historyQuery = `
       SELECT p.winner,p.received, g.*
       FROM participants p
       JOIN users u ON p.userUid = u.uid
       JOIN giveaways g ON p.giveawayId = g.id
-      WHERE u.email = '${email}'
-      ORDER BY g.id DESC;
-    
-    `);
+      WHERE u.email = '?'
+      ORDER BY g.id DESC; 
+    `;
+    const [rows, fields] = await pool.execute(historyQuery, [email]);
+    console.log("history query: ", rows);
+    // const history_query = await pool.query(`
 
-    socket.emit("giveaway-history", history_query);
+    //   SELECT p.winner,p.received, g.*
+    //   FROM participants p
+    //   JOIN users u ON p.userUid = u.uid
+    //   JOIN giveaways g ON p.giveawayId = g.id
+    //   WHERE u.email = '${email}'
+    //   ORDER BY g.id DESC;
+
+    // `);
+
+    socket.emit("giveaway-history", rows);
   });
 
   socket.on("get-giveaways-info", async () => {
     // get list of participants in active giveaway
     // aka data in active giveaway table
-    const query = `
+    let giveaway_x_id = null;
+    let giveaway_z_id = null;
+
+    const xQuery = `
       SELECT
           g.id,
           u.uid,
@@ -173,35 +193,40 @@ io.on("connection", (socket) => {
           AND g.type = 'x'
       ORDER BY
           p.date DESC;`;
-    const [rows, fields] = await pool.execute(query);
+    const [rows, fields] = await pool.execute(xQuery);
     console.log("this is rows ", rows);
     // console.log("first row ", rows[0]);
 
-    const giveaway_x_query = await pool.query(`
-      SELECT
-          g.id,
-          u.uid,
-          p.date
-      FROM
-          participants p
-      INNER JOIN
-          users u ON p.id = u.id
-      INNER JOIN
-          giveaways g ON p.giveawayId = g.id
-      WHERE
-          g.status = 'active'
-          AND g.type = 'x'
-      ORDER BY
-          p.date DESC;
-    `);
+    // const giveaway_x_query = await pool.query(`
+    //   SELECT
+    //       g.id,
+    //       u.uid,
+    //       p.date
+    //   FROM
+    //       participants p
+    //   INNER JOIN
+    //       users u ON p.id = u.id
+    //   INNER JOIN
+    //       giveaways g ON p.giveawayId = g.id
+    //   WHERE
+    //       g.status = 'active'
+    //       AND g.type = 'x'
+    //   ORDER BY
+    //       p.date DESC;
+    // `);
 
-    const giveaway_x_query_result = Object.values(
-      JSON.parse(JSON.stringify(giveaway_x_query))
-    )[0];
-    console.log("normal q ", giveaway_x_query_result);
-    const giveaway_x_id = giveaway_x_query_result.id;
+    // const giveaway_x_query_result = Object.values(
+    //   JSON.parse(JSON.stringify(giveaway_x_query))
+    // )[0];
+    // console.log("normal q ", giveaway_x_query_result);
+    if (rows.length) {
+      giveaway_x_id = rows[0].id;
+      console.log("giveaway_x_id ", giveaway_x_id);
+    } else {
+      console.log("rows length = ", rows.length);
+    }
 
-    const giveaway_z_query = await pool.query(`
+    const zQuery = `
     SELECT
         g.id,
         u.uid,
@@ -217,26 +242,52 @@ io.on("connection", (socket) => {
         AND g.type = 'z'
     ORDER BY
         p.date DESC;
-  `);
-    // console.log(giveaway_z_query);
-    // const giveaway_z_query_result = Object.values(
-    //   JSON.parse(JSON.stringify(giveaway_z_query))
-    // )[0];
-    // console.log(giveaway_z_query_result);
+    `;
+
+    const [zRows, zFields] = await pool.execute(zQuery);
+    if (zRows.length) {
+      giveaway_z_id = zRows[0].id;
+      console.log("giveaway_z_id ", giveaway_z_id);
+    } else {
+      console.log("zRows length = ", zRows.length);
+    }
+
+    //   const giveaway_z_query = await pool.query(`
+    //   SELECT
+    //       g.id,
+    //       u.uid,
+    //       p.date
+    //   FROM
+    //       participants p
+    //   INNER JOIN
+    //       users u ON p.id = u.id
+    //   INNER JOIN
+    //       giveaways g ON p.giveawayId = g.id
+    //   WHERE
+    //       g.status = 'active'
+    //       AND g.type = 'z'
+    //   ORDER BY
+    //       p.date DESC;
+    // `);
+    //   console.log(giveaway_z_query);
+    //   const giveaway_z_query_result = Object.values(
+    //     JSON.parse(JSON.stringify(giveaway_z_query))
+    //   )[0];
+    //   console.log(giveaway_z_query_result);
     // const giveaway_z_id = giveaway_z_query_result.id;
 
-    // const giveaway_x_data = {
-    //   id: giveaway_x_id,
-    //   type: "x",
-    //   participants: giveaway_x_query,
-    // };
-    // const giveaway_z_data = {
-    //   id: giveaway_z_id,
-    //   type: "z",
-    //   participants: giveaway_z_query,
-    // };
+    const giveaway_x_data = {
+      id: giveaway_x_id,
+      type: "x",
+      participants: giveaway_x_query,
+    };
+    const giveaway_z_data = {
+      id: giveaway_z_id,
+      type: "z",
+      participants: giveaway_z_query,
+    };
 
-    // socket.emit("giveawayInfo", giveaway_x_data, giveaway_z_data);
+    socket.emit("giveawayInfo", giveaway_x_data, giveaway_z_data);
   });
 
   // socket.on("check-google-user", async (googleid, email, name) => {
@@ -333,39 +384,31 @@ io.on("connection", (socket) => {
   // });
 
   socket.on("account-delete", async () => {
-    // const data_google = {
-    //   userId: "100820274001530825730",
-    //   email: "basselturky121@gmail.com",
-    //   name: "Bassel Turky",
-    //   iat: 1704277153,
-    //   exp: 1706869153,
-    // };
-    // const data_default = {
-    //   email: "basselturky121@gmail.com",
-    //   uid: "Blue#3244",
-    //   iat: 1704277811,
-    //   exp: 1706869811,
-    // };
+    try {
+      const email = socket.user.email;
 
-    const email = socket.user.email;
+      socket.emit("force-disconnect");
 
-    // decode token,
-    console.log("🚀 ~ file: index.js:228 ~ socket.on ~ socket:", socket.user);
-    // verifyGoogleToken(token);
-    // if (authType === "default") {
-    //   let decoded = decodingToken(token);
+      const query = `
+      DELETE FROM users WHERE email = '?'
+      `;
+      const [rows, fields] = await pool.execute(query, [email]);
 
-    //   if (decoded) {
-    //     // if verified:
-    //     let email = decoded.email;
+      // let result = await pool.query(`DELETE FROM users WHERE email = '${email}'`);
 
-    socket.emit("force-disconnect");
-
-    let result = await pool.query(`DELETE FROM users WHERE email = '${email}'`);
-
-    //   }
-    // }
-    console.log(email, " delete done:  ", result);
+      //   }
+      // }
+      if (rows.affectedRows > 0) {
+        console.log(`Successfully deleted user with email ${email}`);
+        // Emit success event or handle further logic if needed
+      } else {
+        console.log(`User with email ${email} not found or not deleted`);
+        // Handle case where no user was deleted (optional)
+      }
+    } catch (error) {
+      console.error("Error deleting user:", err.message);
+      // Handle error appropriatel
+    }
   });
 
   // const queryResults = await pool.query(
@@ -404,11 +447,18 @@ io.on("connection", (socket) => {
     var today = new Date().toISOString().split("T")[0];
     var this_month = today.substring(0, 8) + "01";
     const customDate = "2024-3-23";
-    const query_result = await pool.query(
-      `SELECT * FROM wallpapers WHERE date(date) < '${customDate}'`
-    );
 
-    socket.emit("all-wallpapers", { result: query_result, date: customDate });
+    const query = `
+    SELECT * FROM wallpapers WHERE date(date) < '?'
+    `;
+
+    const [rows, fields] = await pool.execute(query, [customDate]);
+
+    // const query_result = await pool.query(
+    //   `SELECT * FROM wallpapers WHERE date(date) < '${customDate}'`
+    // );
+
+    socket.emit("all-wallpapers", { result: rows, date: customDate });
   });
 
   socket.on("get-daily-wallpapers", async () => {
@@ -435,16 +485,31 @@ io.on("connection", (socket) => {
     let query_result;
 
     if (Number(day) > 27) {
-      query_result = await pool.query(
-        `SELECT * FROM wallpapers WHERE date >= '${start_of_the_month}' AND date <= '${end_of_the_month}' ORDER BY downloads DESC LIMIT ${number_of_wallpapers}`
-      );
+      // query_result = await pool.query(
+      //   `SELECT * FROM wallpapers WHERE date >= '${start_of_the_month}' AND date <= '${end_of_the_month}' ORDER BY downloads DESC LIMIT ${number_of_wallpapers}`
+      // );
+
+      const query = `
+      SELECT * FROM wallpapers WHERE date >= '?' AND date <= '?' ORDER BY downloads DESC LIMIT ?
+      `;
+
+      query_result = await pool.execute(query, [
+        start_of_the_month,
+        end_of_the_month,
+        number_of_wallpapers,
+      ]);
     } else {
-      query_result = await pool.query(
-        `SELECT * FROM wallpapers WHERE date(date) = '${today}'`
-      );
+      // query_result = await pool.query(
+      //   `SELECT * FROM wallpapers WHERE date(date) = '${today}'`
+      // );
+
+      const query = `
+      SELECT * FROM wallpapers WHERE date(date) = '?'
+      `;
+      query_result = await pool.execute(query, [today]);
     }
 
-    socket.emit("daily-wallpapers", { result: query_result, date: today });
+    socket.emit("daily-wallpapers", { result: query_result[0], date: today });
   });
 
   socket.on(
@@ -462,25 +527,68 @@ io.on("connection", (socket) => {
       // let consumed_coins = req.body.consumed_coins;
       // let wallpaper_id = req.body.wallpaper_id;
       const email = socket.user.email;
-      const user_data_query = await pool.query(
-        `SELECT * FROM users WHERE email = '${email}'`
-      );
 
-      const user_data = Object.values(
-        JSON.parse(JSON.stringify(user_data_query))
-      )[0];
+      const userDataQuery = `
+      SELECT * FROM users WHERE email = '?'
+      `;
+      const [userRows, userFields] = await pool.execute(userDataQuery, [email]);
+      // const user_data_query = await pool.query(
+      //   `SELECT * FROM users WHERE email = '${email}'`
+      // );
 
-      if (user_data.coins >= consumed_coins) {
-        const new_coins_amount = user_data.coins - consumed_coins;
+      const user = userRows[0];
+
+      // const user_data = Object.values(
+      //   JSON.parse(JSON.stringify(user_data_query))
+      // )[0];
+
+      if (user.coins >= consumed_coins) {
+        const new_coins_amount = user.coins - consumed_coins;
 
         // consume coins
-        await pool.query(`
-        UPDATE users SET coins = ${new_coins_amount} WHERE email = '${email}'
-        `);
+        const updateQuery = `
+        UPDATE users SET coins = ? WHERE email = '?'
+        `;
+        const [updateRows, updateFields] = await pool.execute(updateQuery, [
+          new_coins_amount,
+          email,
+        ]);
+
+        if (updateRows.affectedRows > 0) {
+          console.log(
+            `Successfully updated coins for user with email ${email}`
+          );
+          // Handle success, emit events, etc.
+        } else {
+          console.log(
+            `User with email ${email} not found or update did not occur`
+          );
+          // Handle case where no rows were updated
+        }
+        // await pool.query(`
+        // UPDATE users SET coins = ${new_coins_amount} WHERE email = '${email}'
+        // `);
         // update downloads number
-        await pool.query(`
-      UPDATE wallpapers SET downloads = downloads + 1 WHERE wallpaper_id = ${wallpaper_id}
-      `);
+        const query = `
+        UPDATE wallpapers SET downloads = downloads + 1 WHERE wallpaper_id = ?
+        `;
+        const [rows, fields] = await pool.execute(query, [wallpaper_id]);
+
+        if (rows.affectedRows > 0) {
+          console.log(
+            `Successfully updated downloads for wallpaper with ID ${wallpaper_id}`
+          );
+          // Handle success, emit events, etc.
+        } else {
+          console.log(
+            `Wallpaper with ID ${wallpaper_id} not found or update did not occur`
+          );
+          // Handle case where no rows were updated
+        }
+
+        //   await pool.query(`
+        // UPDATE wallpapers SET downloads = downloads + 1 WHERE wallpaper_id = ${wallpaper_id}
+        // `);
 
         socket.emit(
           "start-download",
@@ -521,18 +629,30 @@ io.on("connection", (socket) => {
       // }
 
       // get current coins
-      let queryCoins = await pool.query(
-        `SELECT coins FROM users WHERE email = '${email}'`
-      );
-      let result = Object.values(JSON.parse(JSON.stringify(queryCoins)));
+      const query = `
+      SELECT coins FROM users WHERE email = '?'
+      `;
+      const [rows, fields] = await pool.execute(query, [email]);
 
-      let db_coins = result[0].coins;
+      // let queryCoins = await pool.query(
+      //   `SELECT coins FROM users WHERE email = '${email}'`
+      // );
+      // let result = Object.values(JSON.parse(JSON.stringify(queryCoins)));
+      const user = rows[0];
+      let db_coins = user.coins;
       // save coin
       let new_coins_amount = db_coins + gained_coins;
 
-      await pool.query(
-        `UPDATE users SET coins = '${new_coins_amount}' WHERE email = '${email}'`
-      );
+      const updateQuery = `
+      UPDATE users SET coins = '?' WHERE email = '?'
+      `;
+      const [updateRows, updateFields] = await pool.execute(updateQuery, [
+        new_coins_amount,
+        email,
+      ]);
+      // await pool.query(
+      //   `UPDATE users SET coins = '${new_coins_amount}' WHERE email = '${email}'`
+      // );
 
       socket.emit("coin-saved", new_coins_amount);
     } catch (error) {
