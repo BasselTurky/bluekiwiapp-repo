@@ -128,12 +128,15 @@ io.on("connection", (socket) => {
       const userQuery = `
       SELECT name, email, uid, coins FROM users WHERE email = '?'
       `;
+      console.log(`
+      SELECT name, email, uid, coins FROM users WHERE email = '${email}'
+      `);
       const [rows, fields] = await pool.execute(userQuery, [email]);
 
       // const result = await pool.query(
       //   `SELECT name, email, uid, coins FROM users WHERE email = '${email}'`
       // );
-      console.log(rows);
+      console.log("rows: ", rows);
       if (rows.length) {
         console.log("user itself: ", rows[0]);
         socket.emit("userInfo", rows[0]);
