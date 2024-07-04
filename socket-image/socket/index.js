@@ -178,10 +178,19 @@ io.on("connection", (socket) => {
   socket.on("get-giveaways-info", async () => {
     // get list of participants in active giveaway
     // aka data in active giveaway table
+    const giveawayXQuery = `
+    SELECT
+        id,date,status,type
+    FROM
+        giveaways g
+    WHERE
+        g.status = 'active' AND g.type = 'x';
+    `;
+    const [gXRows, gXFields] = await pool.execute(giveawayXQuery);
+    const giveawayXRow = gXRows[0];
 
-    const xQuery = `
+    const participantsXQuery = `
       SELECT
-          g.id,
           u.uid,
           p.date
       FROM
@@ -195,10 +204,10 @@ io.on("connection", (socket) => {
           AND g.type = 'x'
       ORDER BY
           p.date DESC;`;
-    const [rows, fields] = await pool.execute(xQuery);
-    console.log("this is rows ", rows);
+    const [pXRows, pXFields] = await pool.execute(participantsXQuery);
+
     // console.log("first row ", rows[0]);
-    const giveaway_x_id = rows[0].id;
+
     // const giveaway_x_query = await pool.query(`
     //   SELECT
     //       g.id,
@@ -227,10 +236,19 @@ io.on("connection", (socket) => {
     // } else {
     //   console.log("rows length = ", rows.length);
     // }
-
-    const zQuery = `
+    const giveawayZQuery = `
     SELECT
-        g.id,
+        id,date,status,type
+    FROM
+        giveaways g
+    WHERE
+        g.status = 'active' AND g.type = 'z';
+    `;
+    const [zGRows, zGFields] = await pool.execute(giveawayZQuery);
+    const giveawayZRow = zGRows[0];
+
+    const participantsZQuery = `
+    SELECT
         u.uid,
         p.date
     FROM
@@ -246,8 +264,8 @@ io.on("connection", (socket) => {
         p.date DESC;
     `;
 
-    const [zRows, zFields] = await pool.execute(zQuery);
-    const giveaway_z_id = zRows[0].id;
+    const [zPRows, zPFields] = await pool.execute(participantsZQuery);
+
     // if (zRows.length) {
     //   giveaway_z_id = zRows[0].id;
     //   console.log("giveaway_z_id ", giveaway_z_id);
@@ -280,14 +298,14 @@ io.on("connection", (socket) => {
     // const giveaway_z_id = giveaway_z_query_result.id;
 
     const giveaway_x_data = {
-      id: giveaway_x_id,
+      info: giveawayXRow,
       type: "x",
-      participants: rows,
+      participants: pXRows,
     };
     const giveaway_z_data = {
-      id: giveaway_z_id,
+      info: giveawayZRow,
       type: "z",
-      participants: zRows,
+      participants: zPRows,
     };
 
     socket.emit("giveawayInfo", giveaway_x_data, giveaway_z_data);
