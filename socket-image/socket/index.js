@@ -178,8 +178,6 @@ io.on("connection", (socket) => {
   socket.on("get-giveaways-info", async () => {
     // get list of participants in active giveaway
     // aka data in active giveaway table
-    let giveaway_x_id = null;
-    let giveaway_z_id = null;
 
     const xQuery = `
       SELECT
@@ -200,7 +198,7 @@ io.on("connection", (socket) => {
     const [rows, fields] = await pool.execute(xQuery);
     console.log("this is rows ", rows);
     // console.log("first row ", rows[0]);
-
+    const giveaway_x_id = rows[0].id;
     // const giveaway_x_query = await pool.query(`
     //   SELECT
     //       g.id,
@@ -223,12 +221,12 @@ io.on("connection", (socket) => {
     //   JSON.parse(JSON.stringify(giveaway_x_query))
     // )[0];
     // console.log("normal q ", giveaway_x_query_result);
-    if (rows.length) {
-      giveaway_x_id = rows[0].id;
-      console.log("giveaway_x_id ", giveaway_x_id);
-    } else {
-      console.log("rows length = ", rows.length);
-    }
+    // if (rows.length) {
+    //   giveaway_x_id = rows[0].id;
+    //   console.log("giveaway_x_id ", giveaway_x_id);
+    // } else {
+    //   console.log("rows length = ", rows.length);
+    // }
 
     const zQuery = `
     SELECT
@@ -249,12 +247,13 @@ io.on("connection", (socket) => {
     `;
 
     const [zRows, zFields] = await pool.execute(zQuery);
-    if (zRows.length) {
-      giveaway_z_id = zRows[0].id;
-      console.log("giveaway_z_id ", giveaway_z_id);
-    } else {
-      console.log("zRows length = ", zRows.length);
-    }
+    const giveaway_z_id = zRows[0].id;
+    // if (zRows.length) {
+    //   giveaway_z_id = zRows[0].id;
+    //   console.log("giveaway_z_id ", giveaway_z_id);
+    // } else {
+    //   console.log("zRows length = ", zRows.length);
+    // }
 
     //   const giveaway_z_query = await pool.query(`
     //   SELECT
