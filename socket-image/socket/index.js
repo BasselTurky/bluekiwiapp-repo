@@ -338,6 +338,20 @@ io.on("connection", (socket) => {
               console.log(
                 `Successfully inserted ${userUid} into participants.`
               );
+
+              const historyQuery = `
+              SELECT p.winner,p.received, g.*
+              FROM participants p
+              JOIN users u ON p.userUid = u.uid
+              JOIN giveaways g ON p.giveawayId = g.id
+              WHERE u.email = ?
+              ORDER BY g.id DESC; 
+            `;
+              const [rows, fields] = await pool.execute(historyQuery, [email]);
+              console.log("history query: ", rows);
+
+              socket.emit("giveaway-history", rows);
+
               const insertedId = insertResult.insertId;
               const selectQuery = `
               SELECT * FROM participants WHERE id = ?
@@ -350,7 +364,7 @@ io.on("connection", (socket) => {
               // notify all
               if (participantRow[0]) {
                 const participantInfo = participantRow[0];
-                io.emit("participant-joined", participantInfo);
+                io.emit("participant-joined", participantInfo, giveawayId);
               } else {
                 console.log(`Didn't find participant / ${participantRow}`);
               }
