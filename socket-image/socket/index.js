@@ -311,6 +311,76 @@ io.on("connection", (socket) => {
     socket.emit("giveawayInfo", giveaway_x_data, giveaway_z_data);
   });
 
+  socket.on("join-giveaway", async (giveawayId) => {
+    try {
+      const email = socket.user.email;
+      const userUid = socket.user.uid;
+      const consumedCoins = 10;
+
+      const isActive = await checkActiveGiveaway(giveawayId);
+
+      if (isActive === 1) {
+        const result = await checkCoins(email, consumedCoins);
+        // check coins
+        if (result) {
+          if (result.type === "update") {
+            // coins ok , consumed and updated
+            // add user to participants, then notify all
+            const query = `
+            INSERT INTO participants (giveawayId, userUid) VALUES (?, ?);
+          `;
+            const [insertResult] = await pool.execute(query, [
+              giveawayId,
+              userUid,
+            ]);
+
+            if (insertResult.affectedRows > 0) {
+              console.log(
+                `Successfully inserted ${userUid} into participants.`
+              );
+              const insertedId = insertResult.insertId;
+              const selectQuery = `
+              SELECT * FROM participants WHERE id = ?
+              `;
+              const [participantRow, participantField] = await pool.execute(
+                selectQuery,
+                [insertedId]
+              );
+              // Handle success, emit events, etc.
+              // notify all
+              if (participantRow[0]) {
+                const participantInfo = participantRow[0];
+                io.emit("participant-joined", participantInfo);
+              } else {
+                console.log(`Didn't find participant / ${participantRow}`);
+              }
+            } else {
+              console.log(
+                `User ${userUid}/giveaway:${giveawayId} not found or insert did not occur`
+              );
+              // Handle case where no rows were updated
+            }
+          } else if (result.type === "failed") {
+            // not enough coins
+            socket.emit("toasts", {
+              type: "error",
+              message: "Not enough coins.",
+            });
+          }
+        } else {
+          throw new Error("Check coins error");
+        }
+      } else if (isActive === 0) {
+        socket.emit("toasts", { type: "error", message: "Giveaway ended." });
+      }
+
+      // socket.emit("toasts", { type: "error", message: "Not enough coins." });
+    } catch (error) {
+      console.log(error);
+      socket.emit("toasts", { type: "error", message: "Join failed." });
+    }
+  });
+
   // socket.on("check-google-user", async (googleid, email, name) => {
   //   try {
   //     // check if googleid exists
@@ -720,5 +790,97 @@ function decodingToken(token) {
       // Handle other unexpected errors
       console.error("An unexpected error occurred:", error.message);
     }
+  }
+}
+
+async function checkCoins(email, consumedCoins) {
+  try {
+    const userDataQuery = `
+  SELECT * FROM users WHERE email = ?
+  `;
+    const [userRows, userFields] = await pool.execute(userDataQuery, [email]);
+    const user = userRows[0];
+
+    if (user.coins >= consumedCoins) {
+      const newCoinsAmount = user.coins - consumedCoins;
+
+      const updateQuery = `
+    UPDATE users SET coins = ? WHERE email = ?
+    `;
+      const [updateRows, updateFields] = await pool.execute(updateQuery, [
+        newCoinsAmount,
+        email,
+      ]);
+
+      if (updateRows.affectedRows > 0) {
+        console.log(`Successfully updated coins for user with email ${email}`);
+
+        return {
+          type: "update",
+          user: user,
+          newCoinsAmount: newCoinsAmount,
+        };
+        // Handle success, emit events, etc.
+      } else {
+        console.log(
+          `User with email ${email} not found or update did not occur`
+        );
+        // Handle case where no rows were updated
+        return null;
+      }
+    } else {
+      return {
+        type: "failed",
+        user: user,
+      };
+    }
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+}
+
+// async function consumeCoins(email, consumedCoins, userCoins) {
+//   try {
+//     const newCoinsAmount = userCoins - consumedCoins;
+
+//     const updateQuery = `
+//   UPDATE users SET coins = ? WHERE email = ?
+//   `;
+//     const [updateRows, updateFields] = await pool.execute(updateQuery, [
+//       newCoinsAmount,
+//       email,
+//     ]);
+
+//     if (updateRows.affectedRows > 0) {
+//       console.log(`Successfully updated coins for user with email ${email}`);
+//       result.update = true;
+//       result.user = user;
+//       result.newCoinsAmount = newCoinsAmount;
+
+//       return {};
+//       // Handle success, emit events, etc.
+//     } else {
+//       console.log(`User with email ${email} not found or update did not occur`);
+//       // Handle case where no rows were updated
+//       return {};
+//     }
+//   } catch (error) {}
+// }
+
+async function checkActiveGiveaway(giveawayId) {
+  // do something
+  try {
+    const query = `
+  SELECT EXISTS(SELECT 1 FROM giveaways WHERE id = ? AND status = 'active') AS isActive;
+  `;
+
+    const [rows, fields] = await pool.execute(query, [giveawayId]);
+
+    if (rows[0]) {
+      return rows[0].isActive;
+    }
+  } catch (error) {
+    console.log(error);
   }
 }
