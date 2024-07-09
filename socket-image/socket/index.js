@@ -191,12 +191,10 @@ io.on("connection", (socket) => {
 
     const participantsXQuery = `
       SELECT
-          u.uid,
+          p.userUid,
           p.date
       FROM
           participants p
-      INNER JOIN
-          users u ON p.id = u.id
       INNER JOIN
           giveaways g ON p.giveawayId = g.id
       WHERE
@@ -249,12 +247,10 @@ io.on("connection", (socket) => {
 
     const participantsZQuery = `
     SELECT
-        u.uid,
+        p.userUid,
         p.date
     FROM
         participants p
-    INNER JOIN
-        users u ON p.id = u.id
     INNER JOIN
         giveaways g ON p.giveawayId = g.id
     WHERE
@@ -354,7 +350,7 @@ io.on("connection", (socket) => {
 
               const insertedId = insertResult.insertId;
               const selectQuery = `
-              SELECT * FROM participants WHERE id = ?
+              SELECT userUid,date FROM participants WHERE id = ?
               `;
               const [participantRow, participantField] = await pool.execute(
                 selectQuery,
