@@ -311,7 +311,7 @@ io.on("connection", (socket) => {
     socket.emit("giveawayInfo", giveaway_x_data, giveaway_z_data);
   });
 
-  socket.on("join-giveaway", async (giveawayId) => {
+  socket.on("join-giveaway", async (giveawayId, giveawayType) => {
     try {
       const email = socket.user.email;
       const userUid = socket.user.uid;
@@ -364,7 +364,12 @@ io.on("connection", (socket) => {
               // notify all
               if (participantRow[0]) {
                 const participantInfo = participantRow[0];
-                io.emit("participant-joined", participantInfo, giveawayId);
+                io.emit(
+                  "participant-joined",
+                  participantInfo,
+                  giveawayId,
+                  giveawayType
+                );
               } else {
                 console.log(`Didn't find participant / ${participantRow}`);
               }
