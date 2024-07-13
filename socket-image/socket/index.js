@@ -152,7 +152,7 @@ io.on("connection", (socket) => {
     const email = socket.user.email;
 
     const historyQuery = `
-      SELECT p.winner,p.received, g.*
+      SELECT p.winner,p.received, g.id, g.date, g.reward_value_usd, g.status,g.type, g.winnerUid
       FROM participants p
       JOIN users u ON p.userUid = u.uid
       JOIN giveaways g ON p.giveawayId = g.id
@@ -336,7 +336,7 @@ io.on("connection", (socket) => {
               );
 
               const historyQuery = `
-              SELECT p.winner,p.received, g.*
+              SELECT p.winner,p.received, g.id, g.date, g.reward_value_usd, g.status,g.type, g.winnerUid
               FROM participants p
               JOIN users u ON p.userUid = u.uid
               JOIN giveaways g ON p.giveawayId = g.id
