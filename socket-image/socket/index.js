@@ -149,15 +149,48 @@ io.on("connection", (socket) => {
   });
 
   socket.on("get-user-giveaway-history", async () => {
+    p;
     const email = socket.user.email;
 
+    // const historyQuery = `
+    //   SELECT p.winner,p.received, g.id, g.date, g.reward_value_usd, g.status,g.type
+    //   FROM participants p
+    //   JOIN users u ON p.userUid = u.uid
+    //   JOIN giveaways g ON p.giveawayId = g.id
+    //   WHERE u.email = ?
+    //   ORDER BY g.id DESC;
+    // `;
     const historyQuery = `
-      SELECT p.winner,p.received, g.id, g.date, g.reward_value_usd, g.status,g.type, g.winnerUid
-      FROM participants p
-      JOIN users u ON p.userUid = u.uid
-      JOIN giveaways g ON p.giveawayId = g.id
-      WHERE u.email = ?
-      ORDER BY g.id DESC; 
+SELECT 
+    g.id AS giveawayId,
+    g.date,
+    g.type,
+    g.reward_value_usd,
+    (
+        SELECT JSON_ARRAYAGG(
+            JSON_OBJECT(
+                'userId', p.userUid,
+                'joinDate', p.date
+            )
+        )
+        FROM participants p
+        WHERE p.giveawayId = g.id AND p.winner = 1
+    ) AS winners,
+    (
+        SELECT COUNT(*) 
+        FROM participants p_all
+        WHERE p_all.giveawayId = g.id
+    ) AS totalParticipants
+FROM 
+    giveaways g
+JOIN participants p ON g.id = p.giveawayId
+JOIN users u ON p.userUid = u.uid
+WHERE 
+    g.status = 'ended'
+    AND u.email = ?
+ORDER BY 
+    g.date DESC
+LIMIT 10;
     `;
     const [rows, fields] = await pool.execute(historyQuery, [email]);
     console.log("history query: ", rows);
