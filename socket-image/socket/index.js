@@ -169,7 +169,9 @@ SELECT
         SELECT JSON_ARRAYAGG(
             JSON_OBJECT(
                 'userId', p.userUid,
-                'joinDate', p.date
+                'joinDate', p.date,
+                'winner', p.winner,
+                'received', p.received
             )
         )
         FROM participants p
