@@ -149,7 +149,6 @@ io.on("connection", (socket) => {
   });
 
   socket.on("get-user-giveaway-history", async () => {
-    p;
     const email = socket.user.email;
 
     // const historyQuery = `
