@@ -165,6 +165,8 @@ SELECT
     g.date,
     g.type,
     g.reward_value_usd,
+    p.winner,
+    p.received,
     (
         SELECT JSON_ARRAYAGG(
             JSON_OBJECT(
