@@ -148,200 +148,419 @@ io.on("connection", (socket) => {
     }
   });
 
-  socket.on("get-user-giveaway-history", async () => {
-    const email = socket.user.email;
+  //   socket.on("get-user-giveaway-history", async () => {
+  //     const email = socket.user.email;
 
-    // const historyQuery = `
-    //   SELECT p.winner,p.received, g.id, g.date, g.reward_value_usd, g.status,g.type
-    //   FROM participants p
-    //   JOIN users u ON p.userUid = u.uid
-    //   JOIN giveaways g ON p.giveawayId = g.id
-    //   WHERE u.email = ?
-    //   ORDER BY g.id DESC;
-    // `;
-    const historyQuery = `
-SELECT 
-    g.id AS giveawayId,
-    g.date,
-    g.type,
-    g.reward_value_usd,
-    p.winner,
-    p.received,
-    (
-        SELECT JSON_ARRAYAGG(
-            JSON_OBJECT(
-                'userId', p.userUid,
-                'joinDate', p.date,
-                'winner', p.winner,
-                'received', p.received
-            )
-        )
-        FROM participants p
-        WHERE p.giveawayId = g.id AND p.winner = 1
-    ) AS winners,
-    (
-        SELECT COUNT(*) 
-        FROM participants p_all
-        WHERE p_all.giveawayId = g.id
-    ) AS totalParticipants
-FROM 
-    giveaways g
-JOIN participants p ON g.id = p.giveawayId
-JOIN users u ON p.userUid = u.uid
-WHERE 
-    g.status = 'ended'
-    AND u.email = ?
-ORDER BY 
-    g.date DESC
-LIMIT 10;
-    `;
-    const [rows, fields] = await pool.execute(historyQuery, [email]);
-    console.log("history query: ", rows);
-    // const history_query = await pool.query(`
+  //     // const historyQuery = `
+  //     //   SELECT p.winner,p.received, g.id, g.date, g.reward_value_usd, g.status,g.type
+  //     //   FROM participants p
+  //     //   JOIN users u ON p.userUid = u.uid
+  //     //   JOIN giveaways g ON p.giveawayId = g.id
+  //     //   WHERE u.email = ?
+  //     //   ORDER BY g.id DESC;
+  //     // `;
+  //     const historyQuery = `
+  // SELECT
+  //     g.id AS giveawayId,
+  //     g.date,
+  //     g.type,
+  //     g.reward_value_usd,
+  //     p.winner,
+  //     p.received,
+  //     (
+  //         SELECT JSON_ARRAYAGG(
+  //             JSON_OBJECT(
+  //                 'userId', p.userUid,
+  //                 'joinDate', p.date,
+  //                 'winner', p.winner,
+  //                 'received', p.received
+  //             )
+  //         )
+  //         FROM participants p
+  //         WHERE p.giveawayId = g.id AND p.winner = 1
+  //     ) AS winners,
+  //     (
+  //         SELECT COUNT(*)
+  //         FROM participants p_all
+  //         WHERE p_all.giveawayId = g.id
+  //     ) AS totalParticipants
+  // FROM
+  //     giveaways g
+  // JOIN participants p ON g.id = p.giveawayId
+  // JOIN users u ON p.userUid = u.uid
+  // WHERE
+  //     g.status = 'ended'
+  //     AND u.email = ?
+  // ORDER BY
+  //     g.date ASC;
+  //     `;
+  //     const [rows, fields] = await pool.execute(historyQuery, [email]);
+  //     console.log("history query: ", rows);
+  //     // const history_query = await pool.query(`
 
-    //   SELECT p.winner,p.received, g.*
-    //   FROM participants p
-    //   JOIN users u ON p.userUid = u.uid
-    //   JOIN giveaways g ON p.giveawayId = g.id
-    //   WHERE u.email = '${email}'
-    //   ORDER BY g.id DESC;
+  //     //   SELECT p.winner,p.received, g.*
+  //     //   FROM participants p
+  //     //   JOIN users u ON p.userUid = u.uid
+  //     //   JOIN giveaways g ON p.giveawayId = g.id
+  //     //   WHERE u.email = '${email}'
+  //     //   ORDER BY g.id DESC;
 
-    // `);
+  //     // `);
 
-    socket.emit("giveaway-history", rows);
+  //     socket.emit("giveaway-history", rows);
+  //   });
+
+  socket.on("get-history-giveaways", async (eventType, offset) => {
+    try {
+      const email = socket.user.email;
+      const historyGiveaways = await getHistoryGiveaways(email, offset);
+      socket.emit("history-giveaways", eventType, historyGiveaways);
+    } catch (error) {
+      socket.emit("toasts", { type: "error", message: "Failed to fetch data" });
+      console.log(`Failed to fetch giveaway history: ,${error}`);
+    }
+
+    // const historyGiveaways = getHistoryGiveaways(email, 0)
   });
 
-  socket.on("get-giveaways-info", async () => {
-    // get list of participants in active giveaway
-    // aka data in active giveaway table
-    const giveawayXQuery = `
-    SELECT
-        id,date,status,type
-    FROM
-        giveaways g
-    WHERE
-        g.status = 'active' AND g.type = 'x';
-    `;
-    const [gXRows, gXFields] = await pool.execute(giveawayXQuery);
-    const giveawayXRow = gXRows[0];
+  // socket.on('get-rest-of-history-giveaways', async(offset)=>{
+  //   const email = socket.user.email
 
-    const participantsXQuery = `
-      SELECT
-          p.userUid,
-          p.date
-      FROM
-          participants p
-      INNER JOIN
-          giveaways g ON p.giveawayId = g.id
-      WHERE
-          g.status = 'active'
-          AND g.type = 'x'
-      ORDER BY
-          p.date DESC;`;
-    const [pXRows, pXFields] = await pool.execute(participantsXQuery);
+  //   const historyGiveaways = getHistoryGiveaways(email, offset)
 
-    // console.log("first row ", rows[0]);
+  //   socket.emit('add-history-giveaway' , historyGiveaways)
+  // })
 
-    // const giveaway_x_query = await pool.query(`
-    //   SELECT
-    //       g.id,
-    //       u.uid,
-    //       p.date
-    //   FROM
-    //       participants p
-    //   INNER JOIN
-    //       users u ON p.id = u.id
-    //   INNER JOIN
-    //       giveaways g ON p.giveawayId = g.id
-    //   WHERE
-    //       g.status = 'active'
-    //       AND g.type = 'x'
-    //   ORDER BY
-    //       p.date DESC;
-    // `);
+  // socket.on("get-giveaways-info", async () => {
+  //   // get list of participants in active giveaway
+  //   // aka data in active giveaway table
+  //   const giveawayXQuery = `
+  //   SELECT
+  //       id,date,status,type
+  //   FROM
+  //       giveaways g
+  //   WHERE
+  //       g.status = 'active' AND g.type = 'x';
+  //   `;
+  //   const [gXRows, gXFields] = await pool.execute(giveawayXQuery);
+  //   const giveawayXRow = gXRows[0];
 
-    // const giveaway_x_query_result = Object.values(
-    //   JSON.parse(JSON.stringify(giveaway_x_query))
-    // )[0];
-    // console.log("normal q ", giveaway_x_query_result);
-    // if (rows.length) {
-    //   giveaway_x_id = rows[0].id;
-    //   console.log("giveaway_x_id ", giveaway_x_id);
-    // } else {
-    //   console.log("rows length = ", rows.length);
-    // }
-    const giveawayZQuery = `
-    SELECT
-        id,date,status,type
-    FROM
-        giveaways g
-    WHERE
-        g.status = 'active' AND g.type = 'z';
-    `;
-    const [zGRows, zGFields] = await pool.execute(giveawayZQuery);
-    const giveawayZRow = zGRows[0];
+  //   // TODO select the rest of the participants not all
 
-    const participantsZQuery = `
-    SELECT
-        p.userUid,
-        p.date
-    FROM
-        participants p
-    INNER JOIN
-        giveaways g ON p.giveawayId = g.id
-    WHERE
-        g.status = 'active'
-        AND g.type = 'z'
-    ORDER BY
-        p.date DESC;
-    `;
+  //   //     const query = `
+  //   //   SELECT
+  //   //       p.userUid,
+  //   //       p.date
+  //   //   FROM
+  //   //       participants p
+  //   //   WHERE
+  //   //       p.giveawayId = ?
+  //   //   ORDER BY
+  //   //       p.date ASC
+  //   //   LIMIT ?, ?
+  //   // `;
 
-    const [zPRows, zPFields] = await pool.execute(participantsZQuery);
+  //   const participantsXQuery = `
+  //     SELECT
+  //         p.userUid,
+  //         p.date
+  //     FROM
+  //         participants p
+  //     INNER JOIN
+  //         giveaways g ON p.giveawayId = g.id
+  //     WHERE
+  //         g.status = 'active'
+  //         AND g.type = 'x'
+  //     ORDER BY
+  //         p.date DESC;`;
+  //   const [pXRows, pXFields] = await pool.execute(participantsXQuery);
 
-    // if (zRows.length) {
-    //   giveaway_z_id = zRows[0].id;
-    //   console.log("giveaway_z_id ", giveaway_z_id);
-    // } else {
-    //   console.log("zRows length = ", zRows.length);
-    // }
+  //   // console.log("first row ", rows[0]);
 
-    //   const giveaway_z_query = await pool.query(`
-    //   SELECT
-    //       g.id,
-    //       u.uid,
-    //       p.date
-    //   FROM
-    //       participants p
-    //   INNER JOIN
-    //       users u ON p.id = u.id
-    //   INNER JOIN
-    //       giveaways g ON p.giveawayId = g.id
-    //   WHERE
-    //       g.status = 'active'
-    //       AND g.type = 'z'
-    //   ORDER BY
-    //       p.date DESC;
-    // `);
-    //   console.log(giveaway_z_query);
-    //   const giveaway_z_query_result = Object.values(
-    //     JSON.parse(JSON.stringify(giveaway_z_query))
-    //   )[0];
-    //   console.log(giveaway_z_query_result);
-    // const giveaway_z_id = giveaway_z_query_result.id;
+  //   // const giveaway_x_query = await pool.query(`
+  //   //   SELECT
+  //   //       g.id,
+  //   //       u.uid,
+  //   //       p.date
+  //   //   FROM
+  //   //       participants p
+  //   //   INNER JOIN
+  //   //       users u ON p.id = u.id
+  //   //   INNER JOIN
+  //   //       giveaways g ON p.giveawayId = g.id
+  //   //   WHERE
+  //   //       g.status = 'active'
+  //   //       AND g.type = 'x'
+  //   //   ORDER BY
+  //   //       p.date DESC;
+  //   // `);
 
-    const giveaway_x_data = {
-      info: giveawayXRow,
-      type: "x",
-      participants: pXRows,
-    };
-    const giveaway_z_data = {
-      info: giveawayZRow,
-      type: "z",
-      participants: zPRows,
-    };
+  //   // const giveaway_x_query_result = Object.values(
+  //   //   JSON.parse(JSON.stringify(giveaway_x_query))
+  //   // )[0];
+  //   // console.log("normal q ", giveaway_x_query_result);
+  //   // if (rows.length) {
+  //   //   giveaway_x_id = rows[0].id;
+  //   //   console.log("giveaway_x_id ", giveaway_x_id);
+  //   // } else {
+  //   //   console.log("rows length = ", rows.length);
+  //   // }
+  //   const giveawayZQuery = `
+  //   SELECT
+  //       id,date,status,type
+  //   FROM
+  //       giveaways g
+  //   WHERE
+  //       g.status = 'active' AND g.type = 'z';
+  //   `;
+  //   const [zGRows, zGFields] = await pool.execute(giveawayZQuery);
+  //   const giveawayZRow = zGRows[0];
 
-    socket.emit("giveawayInfo", giveaway_x_data, giveaway_z_data);
+  //   const participantsZQuery = `
+  //   SELECT
+  //       p.userUid,
+  //       p.date
+  //   FROM
+  //       participants p
+  //   INNER JOIN
+  //       giveaways g ON p.giveawayId = g.id
+  //   WHERE
+  //       g.status = 'active'
+  //       AND g.type = 'z'
+  //   ORDER BY
+  //       p.date DESC;
+  //   `;
+
+  //   const [zPRows, zPFields] = await pool.execute(participantsZQuery);
+
+  //   // if (zRows.length) {
+  //   //   giveaway_z_id = zRows[0].id;
+  //   //   console.log("giveaway_z_id ", giveaway_z_id);
+  //   // } else {
+  //   //   console.log("zRows length = ", zRows.length);
+  //   // }
+
+  //   //   const giveaway_z_query = await pool.query(`
+  //   //   SELECT
+  //   //       g.id,
+  //   //       u.uid,
+  //   //       p.date
+  //   //   FROM
+  //   //       participants p
+  //   //   INNER JOIN
+  //   //       users u ON p.id = u.id
+  //   //   INNER JOIN
+  //   //       giveaways g ON p.giveawayId = g.id
+  //   //   WHERE
+  //   //       g.status = 'active'
+  //   //       AND g.type = 'z'
+  //   //   ORDER BY
+  //   //       p.date DESC;
+  //   // `);
+  //   //   console.log(giveaway_z_query);
+  //   //   const giveaway_z_query_result = Object.values(
+  //   //     JSON.parse(JSON.stringify(giveaway_z_query))
+  //   //   )[0];
+  //   //   console.log(giveaway_z_query_result);
+  //   // const giveaway_z_id = giveaway_z_query_result.id;
+
+  //   const giveaway_x_data = {
+  //     info: giveawayXRow,
+  //     type: "x",
+  //     participants: pXRows,
+  //   };
+  //   const giveaway_z_data = {
+  //     info: giveawayZRow,
+  //     type: "z",
+  //     participants: zPRows,
+  //   };
+
+  //   socket.emit("giveawayInfo", giveaway_x_data, giveaway_z_data);
+  // });
+
+  socket.on("get-active-giveaway", async (type) => {
+    try {
+      const activeGiveaway = await getActiveGiveaway(type);
+      const activeGiveawayId = activeGiveaway.id;
+      const userUid = socket.user.uid;
+      const isUserAParticipant = await checkIfUserExistsInParticipants(
+        userUid,
+        activeGiveawayId
+      );
+      const giveawayObject = {
+        giveaway: activeGiveaway,
+        isParticipant: isUserAParticipant ? true : false,
+      };
+      socket.emit(`active-giveaway`, giveawayObject, type);
+    } catch (error) {
+      socket.emit("toasts", { type: "error", message: "Failed to fetch data" });
+      console.log(`Failed to fetch active giveaway ${type}: ${error}`);
+    }
   });
+
+  socket.on("check-giveawayId", async (giveawayId, type) => {
+    // check if id is current active giveaway id
+    try {
+      const exists = await checkIfGiveawayExixts(giveawayId, type);
+      if (!exists) {
+        const activeGiveaway = await getActiveGiveaway(type);
+        const activeGiveawayId = activeGiveaway.id;
+        const userUid = socket.user.uid;
+        const isUserAParticipant = await checkIfUserExistsInParticipants(
+          userUid,
+          activeGiveawayId
+        );
+        const giveawayObject = {
+          giveaway: activeGiveaway,
+          isParticipant: isUserAParticipant ? true : false,
+        };
+        socket.emit(`active-giveaway`, giveawayObject, type);
+      }
+    } catch (error) {
+      socket.emit("toasts", { type: "error", message: "Failed to fetch data" });
+      console.log(
+        `Failed to fetch active giveaway ${type} after check: ${error}`
+      );
+    }
+  });
+
+  socket.on("get-all-participants", async (type) => {
+    // get participants in giveaway with type: type
+    try {
+      const participantsObject = await getAllParticipants(type);
+      socket.emit(`all-participants-giveaway`, participantsObject, type);
+    } catch (error) {
+      socket.emit("toasts", { type: "error", message: "Failed to fetch data" });
+      console.log(`Failed to fetch all participants: ${error}`);
+    }
+  });
+
+  socket.on(
+    "get-current-participants",
+    async (totalParticipants, giveawayId, type) => {
+      // check if giveaway exists
+      try {
+        const exists = await checkIfGiveawayExixts(giveawayId, type);
+        if (exists) {
+          const currentParticipants = await getCurrentParticipants(
+            type,
+            totalParticipants
+          );
+          socket.emit(`participant-joined`, currentParticipants, type);
+        } else {
+          // send all participants in new active giveaway
+          const participantsObject = await getAllParticipants(type);
+          // and get active giveawayId
+          socket.emit(`all-participants-giveaway`, participantsObject, type);
+        }
+      } catch (error) {
+        socket.emit("toasts", {
+          type: "error",
+          message: "Failed to fetch data",
+        });
+        console.log(`Failed to fetch current participants ${error}`);
+      }
+    }
+  );
+
+  // socket.on("join-giveaway", async (giveawayId, giveawayType) => {
+  //   try {
+  //     const email = socket.user.email;
+  //     const userUid = socket.user.uid;
+  //     const consumedCoins = 10;
+
+  //     const isActive = await checkActiveGiveaway(giveawayId);
+
+  //     if (isActive === 1) {
+
+  //       const userExists = checkIfUserExistsInParticipants(userUid, giveawayId)
+
+  //       if(!userExists){
+
+  //         console.log('user exists');
+
+  //         return
+  //       }
+
+  //       const result = await checkCoins(email, consumedCoins);
+  //       // check coins
+  //       if (result) {
+  //         if (result.type === "update") {
+  //           // coins ok , consumed and updated
+  //           // add user to participants, then notify all
+  //           const query = `
+  //           INSERT INTO participants (giveawayId, userUid) VALUES (?, ?);
+  //         `;
+  //           const [insertResult] = await pool.execute(query, [
+  //             giveawayId,
+  //             userUid,
+  //           ]);
+
+  //           if (insertResult.affectedRows > 0) {
+  //             console.log(
+  //               `Successfully inserted ${userUid} into participants.`
+  //             );
+
+  //             const historyQuery = `
+  //             SELECT p.winner,p.received, g.id, g.date, g.reward_value_usd, g.status,g.type, g.winnerUid
+  //             FROM participants p
+  //             JOIN users u ON p.userUid = u.uid
+  //             JOIN giveaways g ON p.giveawayId = g.id
+  //             WHERE u.email = ?
+  //             ORDER BY g.id DESC;
+  //           `;
+  //             const [rows, fields] = await pool.execute(historyQuery, [email]);
+  //             console.log("history query: ", rows);
+
+  //             socket.emit("giveaway-history", rows);
+
+  //             const insertedId = insertResult.insertId;
+  //             const selectQuery = `
+  //             SELECT userUid,date FROM participants WHERE id = ?
+  //             `;
+  //             const [participantRow, participantField] = await pool.execute(
+  //               selectQuery,
+  //               [insertedId]
+  //             );
+  //             // Handle success, emit events, etc.
+  //             // notify all
+  //             if (participantRow[0]) {
+  //               const participantInfo = participantRow[0];
+  //               io.emit(
+  //                 "participant-joined",
+  //                 participantInfo,
+  //                 giveawayId,
+  //                 giveawayType
+  //               );
+  //             } else {
+  //               console.log(`Didn't find participant / ${participantRow}`);
+  //             }
+  //           } else {
+  //             console.log(
+  //               `User ${userUid}/giveaway:${giveawayId} not found or insert did not occur`
+  //             );
+  //             // Handle case where no rows were updated
+  //           }
+  //         } else if (result.type === "failed") {
+  //           // not enough coins
+  //           socket.emit("toasts", {
+  //             type: "error",
+  //             message: "Not enough coins.",
+  //           });
+  //         }
+  //       } else {
+  //         throw new Error("Check coins error");
+  //       }
+  //     } else if (isActive === 0) {
+  //       socket.emit("toasts", { type: "error", message: "Giveaway ended." });
+  //     }
+
+  //     // socket.emit("toasts", { type: "error", message: "Not enough coins." });
+  //   } catch (error) {
+  //     console.log(error);
+  //     socket.emit("toasts", { type: "error", message: "Join failed." });
+  //   }
+  // });
 
   socket.on("join-giveaway", async (giveawayId, giveawayType) => {
     try {
@@ -349,83 +568,81 @@ LIMIT 10;
       const userUid = socket.user.uid;
       const consumedCoins = 10;
 
+      // Check if the giveaway is active
       const isActive = await checkActiveGiveaway(giveawayId);
-
-      if (isActive === 1) {
-        const result = await checkCoins(email, consumedCoins);
-        // check coins
-        if (result) {
-          if (result.type === "update") {
-            // coins ok , consumed and updated
-            // add user to participants, then notify all
-            const query = `
-            INSERT INTO participants (giveawayId, userUid) VALUES (?, ?);
-          `;
-            const [insertResult] = await pool.execute(query, [
-              giveawayId,
-              userUid,
-            ]);
-
-            if (insertResult.affectedRows > 0) {
-              console.log(
-                `Successfully inserted ${userUid} into participants.`
-              );
-
-              const historyQuery = `
-              SELECT p.winner,p.received, g.id, g.date, g.reward_value_usd, g.status,g.type, g.winnerUid
-              FROM participants p
-              JOIN users u ON p.userUid = u.uid
-              JOIN giveaways g ON p.giveawayId = g.id
-              WHERE u.email = ?
-              ORDER BY g.id DESC; 
-            `;
-              const [rows, fields] = await pool.execute(historyQuery, [email]);
-              console.log("history query: ", rows);
-
-              socket.emit("giveaway-history", rows);
-
-              const insertedId = insertResult.insertId;
-              const selectQuery = `
-              SELECT userUid,date FROM participants WHERE id = ?
-              `;
-              const [participantRow, participantField] = await pool.execute(
-                selectQuery,
-                [insertedId]
-              );
-              // Handle success, emit events, etc.
-              // notify all
-              if (participantRow[0]) {
-                const participantInfo = participantRow[0];
-                io.emit(
-                  "participant-joined",
-                  participantInfo,
-                  giveawayId,
-                  giveawayType
-                );
-              } else {
-                console.log(`Didn't find participant / ${participantRow}`);
-              }
-            } else {
-              console.log(
-                `User ${userUid}/giveaway:${giveawayId} not found or insert did not occur`
-              );
-              // Handle case where no rows were updated
-            }
-          } else if (result.type === "failed") {
-            // not enough coins
-            socket.emit("toasts", {
-              type: "error",
-              message: "Not enough coins.",
-            });
-          }
-        } else {
-          throw new Error("Check coins error");
-        }
-      } else if (isActive === 0) {
+      if (isActive === 0) {
         socket.emit("toasts", { type: "error", message: "Giveaway ended." });
+        return;
       }
 
-      // socket.emit("toasts", { type: "error", message: "Not enough coins." });
+      // Check if the user already exists in the participants
+      const userExists = await checkIfUserExistsInParticipants(
+        userUid,
+        giveawayId
+      );
+      if (userExists) {
+        console.log("User already exists in participants.");
+        return;
+      }
+
+      // Check if the user has enough coins
+      const result = await checkCoins(email, consumedCoins);
+      if (!result) {
+        throw new Error("Check coins error");
+      }
+
+      if (result.type === "failed") {
+        socket.emit("toasts", { type: "error", message: "Not enough coins." });
+        return;
+      }
+
+      // Insert user into participants and notify all
+      if (result.type === "update") {
+        const query = `
+          INSERT INTO participants (giveawayId, userUid) VALUES (?, ?);
+        `;
+        const [insertResult] = await pool.execute(query, [giveawayId, userUid]);
+
+        if (insertResult.affectedRows > 0) {
+          console.log(`Successfully inserted ${userUid} into participants.`);
+
+          // Fetch and emit giveaway history
+          const historyQuery = `
+            SELECT p.winner, p.received, g.id, g.date, g.reward_value_usd, g.status, g.type, g.winnerUid
+            FROM participants p
+            JOIN users u ON p.userUid = u.uid
+            JOIN giveaways g ON p.giveawayId = g.id
+            WHERE u.email = ?
+            ORDER BY g.id DESC;
+          `;
+          const [rows] = await pool.execute(historyQuery, [email]);
+          socket.emit("giveaway-history", rows);
+
+          // Fetch and emit participant info
+          const insertedId = insertResult.insertId;
+          const selectQuery = `
+            SELECT userUid, date, giveawayId FROM participants WHERE id = ?
+          `;
+          const [participantRow] = await pool.execute(selectQuery, [
+            insertedId,
+          ]);
+
+          if (participantRow[0]) {
+            const participantInfo = participantRow[0];
+            io.emit("participant-joined", participantInfo, giveawayType);
+            socket.emit("user-joined-giveaway", giveawayType);
+            // TODO also sent notice to this socket
+            // that he joined on -user-joined-giveaway-
+            // and add him to this active giveaway state
+          } else {
+            console.log(`Didn't find participant with ID: ${insertedId}`);
+          }
+        } else {
+          console.log(
+            `Failed to insert participant: ${userUid} into giveaway: ${giveawayId}`
+          );
+        }
+      }
     } catch (error) {
       console.log(error);
       socket.emit("toasts", { type: "error", message: "Join failed." });
@@ -933,5 +1150,201 @@ async function checkActiveGiveaway(giveawayId) {
     }
   } catch (error) {
     console.log(error);
+  }
+}
+
+async function checkIfUserExistsInParticipants(userUid, giveawayId) {
+  try {
+    const query = `
+    SELECT 
+    EXISTS (
+        SELECT 
+            1
+        FROM 
+            participants
+        WHERE 
+            userUid = ?
+            AND giveawayId = ?
+    ) AS user_exists;
+    `;
+
+    const [rows, fields] = await pool.execute(query, [userUid, giveawayId]);
+
+    if (rows[0]) {
+      return rows[0].user_exists;
+    }
+  } catch (error) {
+    console.log(error);
+    console.error("Error checking if user exists in participants: ", error);
+  }
+}
+
+async function getActiveGiveaway(type) {
+  try {
+    const query = `
+      SELECT
+          id, date, status, type
+      FROM
+          giveaways g
+      WHERE
+          g.status = 'active' AND g.type = ?;
+    `;
+
+    const [rows, fields] = await pool.execute(query, [type]);
+    const giveawayRow = rows[0];
+
+    return giveawayRow; // Return the fetched row
+  } catch (error) {
+    console.error("Error fetching active giveaway: ", error);
+    throw error; // Re-throw the error if you want to handle it further up the call stack
+  }
+}
+// TODO
+async function checkIfUserIsParticipant(giveawayId, userUid) {
+  try {
+    const query = `
+    SELECT 
+    EXISTS (
+        SELECT 1
+        FROM participants p
+        WHERE p.giveawayId = ? 
+          AND p.userUid = ?
+    ) AS isParticipant;
+    `;
+
+    const [rows, fields] = await pool.execute(query, [giveawayId, userUid]);
+    return rows[0].isParticipant;
+  } catch (error) {
+    console.error("Error checking if user is participant: ", error);
+    throw error;
+  }
+}
+
+async function checkIfGiveawayExixts(giveawayId, type) {
+  try {
+    const query = `
+      SELECT EXISTS(
+      SELECT 1 
+      FROM giveaways
+      WHERE id = ? 
+        AND status = 'active' 
+        AND type = ?
+      ) AS exist;
+    `;
+    const [rows, fields] = await pool.execute(query, [giveawayId, type]);
+
+    return rows[0];
+  } catch (error) {
+    console.error("Error checking if giveaway exists: ", error);
+    throw error;
+  }
+}
+
+async function getAllParticipants(type) {
+  try {
+    const query = `
+      SELECT 
+        p.userUid,
+        p.date,
+        p.giveawayId
+      FROM 
+        participants p
+      JOIN 
+        giveaways g ON p.giveawayId = g.id
+      WHERE 
+        g.status = 'active' 
+      AND g.type = ?;
+    `;
+
+    const [rows, fields] = await pool.execute(query, [type]);
+
+    return {
+      participants: rows,
+      giveawayId: rows[0].giveawayId,
+    };
+  } catch (error) {
+    console.error(
+      "Error fetching all participants in active giveaway: ",
+      error
+    );
+    throw error;
+  }
+}
+
+async function getCurrentParticipants(totalParticipants, type) {
+  try {
+    const query = `
+      SELECT 
+        p.userUid,
+        p.date,
+        p.giveawayId
+      FROM 
+        participants p
+      JOIN 
+        giveaways g ON p.giveawayId = g.id
+      WHERE 
+        g.status = 'active' 
+        AND g.type = ?
+      ORDER BY 
+        p.date ASC
+      OFFSET ?
+      `;
+
+    const [rows, fields] = await pool.execute(query, [type, totalParticipants]);
+
+    return rows;
+  } catch (error) {
+    console.error(
+      "Error fetching current participants in active giveaway: ",
+      error
+    );
+    throw error;
+  }
+}
+
+async function getHistoryGiveaways(email, offset) {
+  try {
+    const query = `
+    SELECT 
+    g.id AS giveawayId,
+    g.date,
+    g.type,
+    g.reward_value_usd,
+    p.winner,
+    p.received,
+      (
+          SELECT JSON_ARRAYAGG(
+              JSON_OBJECT(
+                  'userId', p.userUid,
+                  'joinDate', p.date,
+                  'winner', p.winner,
+                  'received', p.received
+              )
+          )
+          FROM participants p
+          WHERE p.giveawayId = g.id AND p.winner = 1
+      ) AS winners,
+      (
+          SELECT COUNT(*) 
+          FROM participants p_all
+          WHERE p_all.giveawayId = g.id
+      ) AS totalParticipants
+    FROM 
+        giveaways g
+    JOIN participants p ON g.id = p.giveawayId
+    JOIN users u ON p.userUid = u.uid
+    WHERE 
+        g.status = 'ended'
+        AND u.email = ?
+    ORDER BY 
+        g.date ASC  
+    LIMIT 18446744073709551615 OFFSET ?;  
+    `;
+
+    const [rows, fields] = await pool.execute(query, [email, offset]);
+    return rows;
+  } catch (error) {
+    console.error("Error fetching history giveaways: ", error);
+    throw error;
   }
 }
