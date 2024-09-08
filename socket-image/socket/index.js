@@ -1345,8 +1345,9 @@ async function getHistoryGiveaways(email, offset) {
         AND u.email = ?
     ORDER BY 
         g.date ASC  
-    LIMIT 18446744073709551615 OFFSET ?;  
+    LIMIT 100000 OFFSET ?;  
     `;
+    console.log("console: ", email, offsetValue);
 
     const [rows, fields] = await pool.execute(query, [email, offsetValue]);
     return rows;
