@@ -1301,7 +1301,16 @@ async function getCurrentParticipants(totalParticipants, type) {
 }
 
 async function getHistoryGiveaways(email, offset) {
+  console.log("this is offset from client: ", offset, typeof offset);
+  console.log(
+    "this is new new offset from client: ",
+    parseInt(offset, 10),
+    typeof parseInt(offset, 10)
+  );
+
   try {
+    const offsetValue = parseInt(offset, 10) || 0;
+
     const query = `
     SELECT 
     g.id AS giveawayId,
@@ -1339,7 +1348,7 @@ async function getHistoryGiveaways(email, offset) {
     LIMIT 18446744073709551615 OFFSET ?;  
     `;
 
-    const [rows, fields] = await pool.execute(query, [email, offset]);
+    const [rows, fields] = await pool.execute(query, [email, offsetValue]);
     return rows;
   } catch (error) {
     console.error("Error fetching history giveaways: ", error);
