@@ -444,7 +444,14 @@ io.on("connection", (socket) => {
             type,
             totalParticipants
           );
-          socket.emit(`participant-joined`, currentParticipants, type);
+          console.log(
+            "currentParticipants.length : ",
+            currentParticipants.length
+          );
+
+          if (currentParticipants.length) {
+            socket.emit(`participant-joined`, currentParticipants, type);
+          }
         } else {
           // send all participants in new active giveaway
           const participantsObject = await getAllParticipants(type);
