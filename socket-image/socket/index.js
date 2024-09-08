@@ -214,7 +214,9 @@ io.on("connection", (socket) => {
     try {
       const email = socket.user.email;
       const historyGiveaways = await getHistoryGiveaways(email, offset);
-      socket.emit("history-giveaways", eventType, historyGiveaways);
+      if (historyGiveaways.length) {
+        socket.emit("history-giveaways", eventType, historyGiveaways);
+      }
     } catch (error) {
       socket.emit("toasts", { type: "error", message: "Failed to fetch data" });
       console.log(`Failed to fetch giveaway history: ,${error}`);
