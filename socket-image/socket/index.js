@@ -441,8 +441,8 @@ io.on("connection", (socket) => {
         const exists = await checkIfGiveawayExixts(giveawayId, type);
         if (exists) {
           const currentParticipants = await getCurrentParticipants(
-            type,
-            totalParticipants
+            totalParticipants,
+            type
           );
           console.log(
             "currentParticipants.length : ",
@@ -1279,6 +1279,7 @@ async function getAllParticipants(type) {
 
 async function getCurrentParticipants(totalParticipants, type) {
   try {
+    const offsetValue = parseInt(totalParticipants, 10) || 0;
     const query = `
       SELECT 
         p.userUid,
@@ -1292,7 +1293,7 @@ async function getCurrentParticipants(totalParticipants, type) {
         AND g.type = ?
       ORDER BY 
         p.date ASC
-      OFFSET ${totalParticipants};
+      OFFSET ${offsetValue};
       `;
 
     const [rows, fields] = await pool.execute(query, [type]);
@@ -1308,12 +1309,12 @@ async function getCurrentParticipants(totalParticipants, type) {
 }
 
 async function getHistoryGiveaways(email, offset) {
-  console.log("this is offset from client: ", offset, typeof offset);
-  console.log(
-    "this is new new offset from client: ",
-    parseInt(offset, 10),
-    typeof parseInt(offset, 10)
-  );
+  // console.log("this is offset from client: ", offset, typeof offset);
+  // console.log(
+  //   "this is new new offset from client: ",
+  //   parseInt(offset, 10),
+  //   typeof parseInt(offset, 10)
+  // );
 
   try {
     const offsetValue = parseInt(offset, 10) || 0;
