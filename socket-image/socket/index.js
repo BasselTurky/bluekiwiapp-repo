@@ -1293,7 +1293,7 @@ async function getCurrentParticipants(totalParticipants, type) {
         AND g.type = ?
       ORDER BY 
         p.date ASC
-      OFFSET ${offsetValue};
+      LIMIT 100000000 OFFSET ${offsetValue};
       `;
 
     const [rows, fields] = await pool.execute(query, [type]);
@@ -1353,7 +1353,7 @@ async function getHistoryGiveaways(email, offset) {
         AND u.email = ?
     ORDER BY 
         g.date ASC  
-    LIMIT 100000 OFFSET ${offsetValue};  
+    LIMIT 100000000 OFFSET ${offsetValue};  
     `;
     console.log("console: ", email, typeof email, offsetValue);
 
