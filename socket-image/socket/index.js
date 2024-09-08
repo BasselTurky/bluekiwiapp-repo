@@ -1243,7 +1243,7 @@ async function getAllParticipants(type) {
     const query = `
       SELECT 
         p.userUid,
-        p.date,
+        p.date
       FROM 
         participants p
       JOIN 
@@ -1275,8 +1275,7 @@ async function getCurrentParticipants(totalParticipants, type) {
     const query = `
       SELECT 
         p.userUid,
-        p.date,
-        p.giveawayId
+        p.date
       FROM 
         participants p
       JOIN 
