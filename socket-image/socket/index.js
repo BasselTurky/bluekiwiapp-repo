@@ -219,8 +219,6 @@ io.on("connection", (socket) => {
       socket.emit("toasts", { type: "error", message: "Failed to fetch data" });
       console.log(`Failed to fetch giveaway history: ,${error}`);
     }
-
-    // const historyGiveaways = getHistoryGiveaways(email, 0)
   });
 
   // socket.on('get-rest-of-history-giveaways', async(offset)=>{
@@ -1246,7 +1244,6 @@ async function getAllParticipants(type) {
       SELECT 
         p.userUid,
         p.date,
-        p.giveawayId
       FROM 
         participants p
       JOIN 
@@ -1258,9 +1255,11 @@ async function getAllParticipants(type) {
 
     const [rows, fields] = await pool.execute(query, [type]);
 
+    const giveawayId = await getActiveGiveaway(type);
+
     return {
       participants: rows,
-      giveawayId: rows[0].giveawayId,
+      giveawayId: giveawayId,
     };
   } catch (error) {
     console.error(
