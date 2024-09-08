@@ -1330,6 +1330,7 @@ async function getHistoryGiveaways(email, offset) {
       (
           SELECT JSON_ARRAYAGG(
               JSON_OBJECT(
+                  'id', p.id,
                   'userId', p.userUid,
                   'joinDate', p.date,
                   'winner', p.winner,
