@@ -1285,7 +1285,7 @@ async function getCurrentParticipants(totalParticipants, type) {
         AND g.type = ?
       ORDER BY 
         p.date ASC
-      OFFSET ?
+      OFFSET ?;
       `;
 
     const [rows, fields] = await pool.execute(query, [type, totalParticipants]);
