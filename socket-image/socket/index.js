@@ -1329,6 +1329,7 @@ async function getHistoryGiveaways(email, offset) {
     g.reward_value_usd,
     p.winner,
     p.received,
+    p.inProgress
       (
           SELECT JSON_ARRAYAGG(
               JSON_OBJECT(
@@ -1336,8 +1337,7 @@ async function getHistoryGiveaways(email, offset) {
                   'userId', p.userUid,
                   'joinDate', p.date,
                   'winner', p.winner,
-                  'received', p.received,
-                  'inProgress', p.inProgress
+                  'received', p.received
               )
           )
           FROM participants p
