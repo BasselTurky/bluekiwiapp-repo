@@ -1336,7 +1336,8 @@ async function getHistoryGiveaways(email, offset) {
                   'userId', p.userUid,
                   'joinDate', p.date,
                   'winner', p.winner,
-                  'received', p.received
+                  'received', p.received,
+                  'inProgress', p.inProgress
               )
           )
           FROM participants p
