@@ -1329,7 +1329,7 @@ async function getHistoryGiveaways(email, offset) {
     g.reward_value_usd,
     p.winner,
     p.received,
-    p.inProgress
+    p.inProgress,
       (
           SELECT JSON_ARRAYAGG(
               JSON_OBJECT(
