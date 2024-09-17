@@ -656,6 +656,103 @@ io.on("connection", (socket) => {
     }
   });
 
+  const claimRewardSchema = {
+    giveawayId: { type: "number", required: true },
+    selectedGift: {
+      type: "string",
+      required: true,
+      allowedValues: [
+        "PayPal",
+        "Payeer",
+        "Amazon Gift Card",
+        "Google Play Gift Card",
+      ],
+    },
+    details: { type: "string", required: true }, // We'll handle specific validation in the handler
+  };
+
+  socket.on("claim-reward", async (giveawayId, selectedGift, details) => {
+    const payload = { giveawayId, selectedGift, details };
+
+    // Validate payload structure
+    const isValidStructure = verifyPayload(payload, claimRewardSchema);
+
+    if (!isValidStructure) {
+      socket.emit("toasts", {
+        type: "error",
+        message: "Invalid input structure.",
+      });
+      return;
+    }
+
+    let isValid = false;
+    // verify input
+    const payeerIdRegex = /^P\d{6,12}$/;
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
+    switch (selectedGift) {
+      case "Payeer":
+        isValid = payeerIdRegex.test(details);
+        break;
+      case "PayPal":
+      case "Amazon Gift Card":
+      case "Google Play Gift Card":
+        isValid = emailRegex.test(details);
+        break;
+      default:
+        isValid = false;
+        break;
+    }
+
+    if (!isValid) {
+      // toast error
+      socket.emit("toasts", {
+        type: "error",
+        message: `Invalid input.`,
+      });
+      return;
+    }
+
+    try {
+      const email = socket.user.email;
+      const userUid = socket.user.uid;
+
+      const success = await updateClaimedGiveawayDetails(
+        selectedGift,
+        details,
+        userUid,
+        giveawayId
+      );
+      // update database
+      if (success) {
+        socket.emit("toasts", {
+          type: "success",
+          message: "Reward claimed successfully!",
+        });
+
+        const payload = {
+          giveawayId: giveawayId,
+          key: "inProgress",
+          value: true,
+        };
+
+        socket.on("reward-claimed", payload);
+      } else {
+        console.log("Failed to claim reward.");
+        socket.emit("toasts", {
+          type: "error",
+          message: "Failed to claim reward.",
+        });
+      }
+    } catch (error) {
+      console.log(error);
+      socket.emit("toasts", {
+        type: "error",
+        message: "An unexpected error.",
+      });
+    }
+  });
+
   // socket.on("check-google-user", async (googleid, email, name) => {
   //   try {
   //     // check if googleid exists
@@ -1367,4 +1464,118 @@ async function getHistoryGiveaways(email, offset) {
     console.error("Error fetching history giveaways: ", error);
     throw error;
   }
+}
+
+async function updateClaimedGiveawayDetails(
+  selectedGift,
+  details,
+  userUid,
+  giveawayId
+) {
+  try {
+    const query = `
+  UPDATE participants 
+       SET inProgress = true, 
+           selectedGift = ?, 
+           details = ? 
+       WHERE userUid = ? 
+         AND giveawayId = ?
+  `;
+    const [rows, fields] = await pool.execute(query, [
+      selectedGift,
+      details,
+      userUid,
+      giveawayId,
+    ]);
+
+    if (rows.affectedRows > 0) {
+      return true; // Update was successful
+    } else {
+      return false; // No rows were updated
+    }
+  } catch (error) {
+    console.error("Error updating claimed giveaway details: ", error);
+    throw error;
+  }
+}
+
+// General verification function
+function verifyPayload(payload, schema) {
+  if (payload === undefined) {
+    console.error("Payload is undefined.");
+    return false;
+  }
+
+  // Iterate through the schema keys to validate the corresponding values in the payload
+  for (const key in schema) {
+    if (!schema.hasOwnProperty(key)) continue;
+
+    const rule = schema[key];
+    const value = payload[key];
+
+    // Check if the value is missing
+    if (rule.required && value === undefined) {
+      console.error(`Missing required key: ${key}`);
+      return false;
+    }
+
+    // Check the type
+    if (value !== undefined && typeof value !== rule.type) {
+      console.error(
+        `Invalid type for key: ${key}. Expected ${
+          rule.type
+        }, got ${typeof value}`
+      );
+      return false;
+    }
+
+    // Perform any additional validation for specific types
+    if (rule.allowedValues && !rule.allowedValues.includes(value)) {
+      console.error(
+        `Invalid value for key: ${key}. Allowed values: ${rule.allowedValues.join(
+          ", "
+        )}`
+      );
+      return false;
+    }
+
+    // Add any other validation checks based on the rule
+    if (rule.type === "string") {
+      // Check string length
+      if (rule.minLength && value.length < rule.minLength) {
+        console.error(
+          `String for key: ${key} is too short. Minimum length: ${rule.minLength}`
+        );
+        return false;
+      }
+      if (rule.maxLength && value.length > rule.maxLength) {
+        console.error(
+          `String for key: ${key} is too long. Maximum length: ${rule.maxLength}`
+        );
+        return false;
+      }
+    }
+
+    if (rule.type === "number") {
+      if (rule.min !== undefined && value < rule.min) {
+        console.error(
+          `Value for key: ${key} is too low. Minimum value: ${rule.min}`
+        );
+        return false;
+      }
+      if (rule.max !== undefined && value > rule.max) {
+        console.error(
+          `Value for key: ${key} is too high. Maximum value: ${rule.max}`
+        );
+        return false;
+      }
+    }
+
+    // For example: range for numbers, regex for strings, etc.
+    if (rule.regex && !rule.regex.test(value)) {
+      console.error(`Invalid format for key: ${key}. Value: ${value}`);
+      return false;
+    }
+  }
+  return true; // If everything passes, return true
 }
