@@ -736,7 +736,7 @@ io.on("connection", (socket) => {
           value: true,
         };
 
-        socket.on("reward-claimed", payload);
+        socket.emit("reward-claimed", payload);
       } else {
         console.log("Failed to claim reward.");
         socket.emit("toasts", {
