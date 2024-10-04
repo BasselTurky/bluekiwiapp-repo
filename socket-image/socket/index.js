@@ -63,28 +63,59 @@ io.use((socket, next) => {
   const token = socket.handshake.auth.token;
 
   if (!token) {
-    const errorMessage = "Authentication error: Token missing.";
-    console.error(errorMessage);
-    socket.emit("authentication_error", { message: errorMessage });
+    socket.emit("toasts", { type: "error", message: "Authentication error" });
     socket.disconnect(true);
     return;
     // return next(new Error("Authentication error: Token missing."));
   }
 
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    if (err) {
-      const errorMessage = "Authentication error: Invalid token.";
-      console.error(errorMessage);
-      socket.emit("authentication_error", { message: errorMessage });
+  jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
+    if (err || !decoded) {
+      socket.emit("toasts", { type: "error", message: "Authentication error" });
       socket.disconnect(true);
       return;
       // return next(new Error("Authentication error: Invalid token."));
     }
-    console.log("🚀 ~ file: index.js:69 ~ jwt.verify ~ decoded:", decoded);
-
     // Attach user information to the socket for further use
     socket.user = decoded;
-    next();
+
+    try {
+      const email = socket.user.email;
+
+      // Check if the user is already connected
+      if (allUsers[email]) {
+        console.log(allUsers);
+
+        // Disconnect older socket
+        const olderSocketID = allUsers[email].socket;
+        const olderSocket = io.sockets.sockets.get(olderSocketID);
+        if (olderSocket) {
+          olderSocket.emit("force-disconnect");
+        }
+      }
+
+      // Overwrite the older socket
+      allUsers[email] = { socket: socket.id };
+
+      // Fetch user data from the database
+      const userInfo = await fetchUserFromDB(email);
+
+      if (userInfo) {
+        console.log("User info:", userInfo);
+        // Emit user info to the frontend
+        socket.emit("userInfo", userInfo);
+
+        next(); // Proceed after successful authentication and data fetching
+      } else {
+        socket.disconnect(true);
+      }
+    } catch (error) {
+      console.error("Authentication error ", error);
+      socket.emit("toasts", { type: "error", message: "Authentication error" });
+      socket.disconnect(true);
+    }
+
+    // next();
   });
 });
 
@@ -1495,6 +1526,19 @@ async function updateClaimedGiveawayDetails(
     }
   } catch (error) {
     console.error("Error updating claimed giveaway details: ", error);
+    throw error;
+  }
+}
+
+async function fetchUserFromDB(email) {
+  try {
+    const query = `
+  SELECT name, email, uid, coins FROM users WHERE email = ?
+  `;
+    const [rows] = await pool.execute(query, [email]);
+    return rows[0];
+  } catch (error) {
+    console.error("Error fetching user data: ", error);
     throw error;
   }
 }

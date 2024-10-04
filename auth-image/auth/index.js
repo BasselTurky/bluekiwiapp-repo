@@ -299,6 +299,54 @@ app.get("/auth/verify/:token", async (req, res) => {
   });
 });
 
+async function findUser(email) {
+  const query = `
+  SELECT * FROM users WHERE email = ?
+  `;
+
+  const [rows] = await pool.execute(query, [email]);
+
+  if (rows) {
+    return rows[0];
+  } else {
+    return null;
+  }
+}
+
+async function validPassword(user, password) {
+  return await argon2.verify(user.password, password);
+}
+
+function generateAccessToken(user) {
+  return jwt.sign(
+    { userId: user.uid, email: user.email },
+    process.env.ACCESS_TOKEN_SECRET,
+    { expiresIn: "15m" }
+  );
+}
+
+function generateRefreshToken(user) {
+  return jwt.sign(
+    { userId: user.uid, email: user.email },
+    process.env.REFRESH_TOKEN_SECRET,
+    { expiresIn: "7d" }
+  );
+}
+
+async function storeRefreshTokenInDB(refreshToken, email) {
+  const query = `
+  UPDATE users SET refreshToken = ? WHERE email = ?
+  `;
+
+  const [rows] = await pool.execute(query, [refreshToken, email]);
+
+  if (rows.affectedRows > 0) {
+    return;
+  } else {
+    throw new Error("Failed to store refresh token");
+  }
+}
+
 app.post("/auth/login-data", async (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -306,197 +354,204 @@ app.post("/auth/login-data", async (req, res) => {
 
   // Get email from database if available
   try {
-    const queryResults = await pool.query(
-      `SELECT * FROM users WHERE email = '${email}'`
-    );
+    const user = await findUser(email);
 
-    const results = Object.values(JSON.parse(JSON.stringify(queryResults)));
-
-    if (!results.length) {
-      return res.send({
-        type: "error",
-        message: "Incorrect email or password.",
-      });
-    }
-    // get user object
-    const user = results[0];
-
-    if (!(await argon2.verify(user.password, password))) {
-      return res.send({
-        type: "error",
-        message: "Incorrect email or password.",
-      });
+    if (!user || !(await validPassword(user, password))) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // Create token
+    // Create access token
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    const token = jwt.sign(
-      { email: email, uid: user.uid },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: 2592000,
+    // store refresh token for user with email = email
+
+    // TODO encrypt token before storing it
+
+    // #region Encryption and Decryption Functions
+    /*
+      npm install crypto
+
+      const ENCRYPTION_KEY = process.env.REFRESH_TOKEN_ENCRYPTION_KEY;  // Must be 32 bytes
+      const IV_LENGTH = 16; // For AES, this is always 16
+
+      const crypto = require('crypto');
+
+      function encryptToken(token) {
+        const iv = crypto.randomBytes(IV_LENGTH);
+        const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY, 'hex'), iv);
+        let encrypted = cipher.update(token);
+
+        encrypted = Buffer.concat([encrypted, cipher.final()]);
+        return iv.toString('hex') + ':' + encrypted.toString('hex');
       }
-    );
 
-    return res.send({ type: "success", token: token });
+      function decryptToken(encryptedToken) {
+        let parts = encryptedToken.split(':');
+        let iv = Buffer.from(parts.shift(), 'hex');
+        let encryptedText = Buffer.from(parts.join(':'), 'hex');
+        let decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY, 'hex'), iv);
+        let decrypted = decipher.update(encryptedText);
+      
+        decrypted = Buffer.concat([decrypted, decipher.final()]);
+        return decrypted.toString();
+      }
+    */
+    // #endregion
+
+    await storeRefreshTokenInDB(refreshToken, email);
+
+    return res.status(200).send({ accessToken, refreshToken });
   } catch (error) {
     console.log(error);
-    return res.send({ type: "error", message: "ErrorID: E007" });
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
 
-app.post("/auth/sign-google-idToken", async (req, res) => {
-  // const data_google = {
-  //   userId: "100820274001530825730",
-  //   email: "basselturky121@gmail.com",
-  //   name: "Bassel Turky",
-  //   iat: 1704277153,
-  //   exp: 1706869153,
-  // };
-  // const data_default = {
-  //   email: "basselturky121@gmail.com",
-  //   uid: "Blue#3244",
-  //   iat: 1704277811,
-  //   exp: 1706869811,
-  // };
+// async function checkGoogleId(googleId) {
+//   const query = `
+//   SELECT EXISTS (SELECT 1 FROM users WHERE googleid = ?) AS googleidExists
+//   `
+//   const [rows] = await pool.execute(query,[googleId])
+//   return rows[0].googleidExists
+// }
+// async function checkEmail(email) {
+//   const query = `
+//   SELECT EXISTS (SELECT 1 FROM users WHERE email = ?) AS emailExists
+//   `
+//   const [rows] = await pool.execute(query,[email])
+//   return rows[0].emailExists
+// }
+// async function checkIfExistsInDB(column, value, returnedAs) {
+//   const query = `
+//   SELECT EXISTS (SELECT 1 FROM users WHERE ${column} = ?) AS ${returnedAs}
+//   `
+//   const [rows] = await pool.execute(query,[value])
+//   return rows[0][returnedAs]
+// }
 
+// ----
+
+async function generateUniqueId(name) {
+  // Helper function to check if a specific discriminator exists for a given name
+  async function isDiscriminatorTaken(name, discriminator) {
+    const query = `
+      SELECT EXISTS (
+        SELECT 1 FROM users WHERE name = ? AND discriminator = ?
+      ) AS discriminatorExists
+    `;
+    const [rows] = await pool.execute(query, [name, discriminator]);
+    return rows[0].discriminatorExists;
+  }
+
+  // Try to generate a unique discriminator, max 10 attempts
+  let discriminator;
+  for (let attempt = 0; attempt < 10; attempt++) {
+    // Generate random number between 0001 and 9999
+    const randomNumber = Math.floor(Math.random() * 9999) + 1;
+    discriminator = randomNumber.toString().padStart(4, "0");
+
+    // Check if the discriminator is already taken for this name
+    const taken = await isDiscriminatorTaken(name, discriminator);
+
+    if (!taken) {
+      // If it's not taken, return the uniqueId
+      return {
+        uniqueId: `${name}#${discriminator}`,
+        discriminator: discriminator,
+        name: name,
+      };
+    }
+  }
+
+  // If we couldn't find a free discriminator after 10 tries, return an error
+  throw new Error("Failed to generate unique discriminator");
+}
+
+async function findUserByEmail(email) {
+  const query = `SELECT * FROM users WHERE email = ?`;
+  const [rows] = await pool.execute(query, [email]);
+  return rows.length > 0 ? rows[0] : null;
+}
+
+async function findUserByGoogleId(googleId) {
+  const query = `SELECT * FROM users WHERE googleid = ?`;
+  const [rows] = await pool.execute(query, [googleId]);
+  return rows.length > 0 ? rows[0] : null;
+}
+
+async function createUser({ name, email, googleId }) {
+  const { uniqueId, discriminator, name } = await generateUniqueId(name);
+  const uniqePassword = generatePassword();
+  const hashedPassword = await argon2.hash(uniqePassword, 10);
+
+  const query = `INSERT INTO users (name, discriminator, uid, email,password, googleId) VALUES (?, ?, ?, ?, ?, ?)`;
+  await pool.execute(query, [
+    name,
+    discriminator,
+    uniqueId,
+    email,
+    hashedPassword,
+    googleId,
+  ]);
+
+  const mailOptions = {
+    // "invite.me.application@hotmail.com"
+    from: `"Blue Kiwi App" <${process.env.SERVER_EMAIL}>`,
+    to: email,
+    subject: "Your Access Password",
+    html: createGoogleUniqePassEmail(uniqePassword),
+  };
+
+  transporter.sendMail(mailOptions, function (error, info) {});
+}
+
+async function updateGoogleIdForUser(email, googleId) {
+  const query = `UPDATE users SET googleid = ? WHERE email = ?`;
+  await pool.execute(query, [googleId, email]);
+}
+
+app.post("/auth/sign-google-idToken", async (req, res) => {
   try {
     // let ticket
     const idToken = req.body.idToken;
     // try {
     const ticket = await client.verifyIdToken({
       idToken: idToken,
-      audience: clientId, // Replace YOUR_CLIENT_ID with your actual client ID
+      audience: clientId,
     });
-    // } catch (error) {
 
-    // }
-
-    // const userInfo = await verifyGoogleToken(idToken);
-    // console.log("🚀 ~ file: index.js:674 ~ app.post ~ userInfo:", userInfo);
-    // if google token expired?
     const payload = ticket.getPayload();
-    // const userId = payload.sub;
-    // const email = payload.email;
-    // const name = payload.name;
-    console.log(payload);
-    const googleid = payload.sub;
+    const googleId = payload.sub;
     const email = payload.email;
     const name = payload.name;
 
-    //-------------------------------------------------------------
-    // check if googleid exists
-    const check_googleid = await pool.query(
-      `SELECT EXISTS (SELECT 1 FROM users WHERE googleid = ${googleid}) AS googleidExists`
-    );
+    let user = await findUserByGoogleId(googleId);
+    if (!user) {
+      user = await findUserByEmail(email);
 
-    if (!check_googleid[0].googleidExists) {
-      // if (!results.length) {
-      // if not, check if email exists
-
-      const check_email = await pool.query(
-        `SELECT EXISTS (SELECT 1 FROM users WHERE email = '${email}') AS emailExists`
-      );
-      console.log("check_email: ", check_email);
-      if (check_email[0].emailExists) {
-        // if true, add googleid to this email
-
-        // a user with registeredd account : has email/password
-        // now add google id to this account
-        await pool.query(
-          `UPDATE users SET googleid = ${googleid} WHERE email = '${email}'`
-        );
-      } else {
-        // new user, fisrt time login with GoogleSignin
-
-        // if not, add new user
-        let set = new Set(Array.from({ length: 9999 }, (_, i) => i + 1));
-        // check if name exists
-        const discriminatorQuery = await pool.query(
-          `SELECT discriminator FROM users WHERE name = '${name}'`
-        );
-        const discriminatorResult = Object.values(
-          JSON.parse(JSON.stringify(discriminatorQuery))
-        ); // array of objects
-        // extract discriminators from query
-        const discriminatorArray = discriminatorResult.map(
-          (result) => result.discriminator
-        );
-        // check if any discriminators are taken : for example Bassel#2224, Bassel#4852, Bassel#9983
-        if (discriminatorArray.length > 0) {
-          // delete existed discriminators from the Set
-          for (let i = 0; i < discriminatorArray.length; i++) {
-            set.delete(discriminatorArray[i]);
-          }
-        }
-        // select random number from Set
-        const availableDiscriminators = Array.from(set);
-        // check if all discriminators are taken
-        const randomIndex = Math.floor(
-          Math.random() * availableDiscriminators.length
-        );
-        const randomNumber = availableDiscriminators[randomIndex];
-        const paddedNumber = randomNumber.toString().padStart(4, "0");
-
-        const uniqueId = name + "#" + paddedNumber;
-
-        //TODO generate password, add this password to the account
-        // and send it to the user in an email
-
-        const uniqePassword = generatePassword();
-        const hashedPassword = await argon2.hash(uniqePassword, 10);
-
-        const queryResult = await pool.query(
-          `INSERT INTO users (name, discriminator, uid, email, googleid, password) VALUES ('${name}','${paddedNumber}','${uniqueId}','${email}',${googleid},'${hashedPassword}')`
-        );
-
-        const mailOptions = {
-          // "invite.me.application@hotmail.com"
-          from: `"Blue Kiwi App" <${process.env.SERVER_EMAIL}>`,
-          to: email,
-          subject: "Your Access Password",
-          html: createGoogleUniqePassEmail(uniqePassword),
-        };
-
-        transporter.sendMail(mailOptions, function (error, info) {
-          // return res.send({
-          //   type: "success",
-          //   message: `Email sent to: ${email} , please check all mails`,
-          // });
-          console.log(info);
+      if (!user) {
+        await createUser({ name, email, googleId });
+        user = await findUserByEmail(email);
+      } else if (user.email === email && !user.googleId) {
+        await updateGoogleIdForUser(email, googleId);
+      } else if (user.email === email && user.googleId !== googleId) {
+        return res.status(400).json({
+          message:
+            "This email is already linked to a different Google account. Please use the correct account.",
         });
       }
     }
 
-    //------------------------------------------------------------
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
 
-    const fetchUidByEmail = await pool.query(
-      `SELECT uid FROM users WHERE email = '${email}'`
-    );
+    await storeRefreshTokenInDB(refreshToken, user.email);
 
-    const results = Object.values(JSON.parse(JSON.stringify(fetchUidByEmail)));
-    const user = results[0];
-
-    const tokenObject = { email: email, googleid: googleid, uid: user.uid };
-    // TODO if the email exists, retrun
-    // if not add new account
-    const token = jwt.sign(tokenObject, process.env.JWT_SECRET, {
-      expiresIn: 2592000,
-    });
-
-    return res.status(200).send({ token: token });
+    return res.status(200).json({ accessToken, refreshToken });
   } catch (error) {
-    console.error(error);
-    if (error.message && error.message.includes("Token used too late")) {
-      console.log("Google token expired. Please sign in again.");
-      return res
-        .status(401)
-        .send({ error: "Google token expired. Please sign in again." });
-    } else {
-      return res
-        .status(500)
-        .send({ error: "Internal Server Error", message: error });
-    }
+    console.error("Google sign-in error:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -1105,3 +1160,108 @@ function generatePassword() {
 // } else {
 
 // }
+
+// Checking if Google ID exists
+// const googleIdExists = await checkIfExistsInDB('googleid', googleId, 'googleidExists');
+
+// // Checking if Email exists
+// const emailExists = await checkIfExistsInDB('email', email, 'emailExists');
+
+// if(!googleIdExists){
+//   //
+// }
+// if (!check_googleid[0].googleidExists) {
+//   // if (!results.length) {
+//   // if not, check if email exists
+
+//   const check_email = await pool.query(
+//     `SELECT EXISTS (SELECT 1 FROM users WHERE email = '${email}') AS emailExists`
+//   );
+//   console.log("check_email: ", check_email);
+//   if (check_email[0].emailExists) {
+//     // if true, add googleid to this email
+
+//     // a user with registeredd account : has email/password
+//     // now add google id to this account
+//     await pool.query(
+//       `UPDATE users SET googleid = ${googleid} WHERE email = '${email}'`
+//     );
+//   } else {
+//     // new user, fisrt time login with GoogleSignin
+
+//     // if not, add new user
+//     let set = new Set(Array.from({ length: 9999 }, (_, i) => i + 1));
+//     // check if name exists
+//     const discriminatorQuery = await pool.query(
+//       `SELECT discriminator FROM users WHERE name = '${name}'`
+//     );
+//     const discriminatorResult = Object.values(
+//       JSON.parse(JSON.stringify(discriminatorQuery))
+//     ); // array of objects
+//     // extract discriminators from query
+//     const discriminatorArray = discriminatorResult.map(
+//       (result) => result.discriminator
+//     );
+//     // check if any discriminators are taken : for example Bassel#2224, Bassel#4852, Bassel#9983
+//     if (discriminatorArray.length > 0) {
+//       // delete existed discriminators from the Set
+//       for (let i = 0; i < discriminatorArray.length; i++) {
+//         set.delete(discriminatorArray[i]);
+//       }
+//     }
+//     // select random number from Set
+//     const availableDiscriminators = Array.from(set);
+//     // check if all discriminators are taken
+//     const randomIndex = Math.floor(
+//       Math.random() * availableDiscriminators.length
+//     );
+//     const randomNumber = availableDiscriminators[randomIndex];
+//     const paddedNumber = randomNumber.toString().padStart(4, "0");
+
+//     const uniqueId = name + "#" + paddedNumber;
+
+//     //TODO generate password, add this password to the account
+//     // and send it to the user in an email
+
+//     const uniqePassword = generatePassword();
+//     const hashedPassword = await argon2.hash(uniqePassword, 10);
+
+//     const queryResult = await pool.query(
+//       `INSERT INTO users (name, discriminator, uid, email, googleid, password) VALUES ('${name}','${paddedNumber}','${uniqueId}','${email}',${googleid},'${hashedPassword}')`
+//     );
+
+//     const mailOptions = {
+//       // "invite.me.application@hotmail.com"
+//       from: `"Blue Kiwi App" <${process.env.SERVER_EMAIL}>`,
+//       to: email,
+//       subject: "Your Access Password",
+//       html: createGoogleUniqePassEmail(uniqePassword),
+//     };
+
+//     transporter.sendMail(mailOptions, function (error, info) {
+//       // return res.send({
+//       //   type: "success",
+//       //   message: `Email sent to: ${email} , please check all mails`,
+//       // });
+//       console.log(info);
+//     });
+//   }
+// }
+
+//------------------------------------------------------------
+
+// const fetchUidByEmail = await pool.query(
+//   `SELECT uid FROM users WHERE email = '${email}'`
+// );
+
+// const results = Object.values(JSON.parse(JSON.stringify(fetchUidByEmail)));
+// const user = results[0];
+
+// const tokenObject = { email: email, googleid: googleid, uid: user.uid };
+// // TODO if the email exists, retrun
+// // if not add new account
+// const token = jwt.sign(tokenObject, process.env.JWT_SECRET, {
+//   expiresIn: 2592000,
+// });
+
+// return res.status(200).send({ token: token });
