@@ -319,7 +319,7 @@ async function validPassword(user, password) {
 
 function generateAccessToken(user) {
   return jwt.sign(
-    { userId: user.uid, email: user.email },
+    { uid: user.uid, email: user.email },
     process.env.ACCESS_TOKEN_SECRET,
     { expiresIn: "15m" }
   );
@@ -327,7 +327,7 @@ function generateAccessToken(user) {
 
 function generateRefreshToken(user) {
   return jwt.sign(
-    { userId: user.uid, email: user.email },
+    { uid: user.uid, email: user.email },
     process.env.REFRESH_TOKEN_SECRET,
     { expiresIn: "7d" }
   );
@@ -552,6 +552,35 @@ app.post("/auth/sign-google-idToken", async (req, res) => {
   } catch (error) {
     console.error("Google sign-in error:", error);
     return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+app.post("/auth/refreshToken", async (req, res) => {
+  const refreshToken = res.body.refreshToken;
+
+  if (!refreshToken) {
+    return res.status(400).json({ message: "No refresh token provided" });
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+
+    const query = `SELECT refreshToken FROM users WHERE email = ?`;
+
+    const [rows] = await pool.execute(query, [decoded.email]);
+
+    if (!rows.length || rows[0].refreshToken !== refreshToken) {
+      return res.status(401).json({ message: "Invalid refresh token" });
+    }
+    const user = { uid: decoded.uid, email: decoded.email };
+    const accessToken = generateAccessToken(user);
+
+    return res.status(200).json({ accessToken });
+  } catch (error) {
+    console.error("Refresh token verification failed", error);
+    return res
+      .status(403)
+      .json({ message: "Refresh token is invalid or expired" });
   }
 });
 
