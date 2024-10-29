@@ -61,6 +61,7 @@ var allUsers = {}; // currently online, inside the app
 
 io.use((socket, next) => {
   const accessToken = socket.handshake.auth.accessToken;
+  console.log(accessToken);
 
   if (!accessToken) {
     socket.emit("toasts", { type: "error", message: "Authentication error" });
@@ -74,6 +75,8 @@ io.use((socket, next) => {
     process.env.ACCESS_TOKEN_SECRET,
     async (err, decoded) => {
       if (err || !decoded) {
+        console.log(err);
+
         socket.emit("toasts", {
           type: "error",
           message: "Authentication error",
@@ -84,6 +87,7 @@ io.use((socket, next) => {
       }
       // Attach user information to the socket for further use
       socket.user = decoded;
+      console.log("decoded");
 
       try {
         const email = socket.user.email;
@@ -98,6 +102,7 @@ io.use((socket, next) => {
           if (olderSocket) {
             olderSocket.emit("force-disconnect");
           }
+          console.log("allUsers");
         }
 
         // Overwrite the older socket
@@ -105,6 +110,7 @@ io.use((socket, next) => {
 
         // Fetch user data from the database
         const userInfo = await fetchUserFromDB(email);
+        console.log("userInfo");
 
         if (userInfo) {
           console.log("User info:", userInfo);
@@ -113,6 +119,8 @@ io.use((socket, next) => {
 
           next(); // Proceed after successful authentication and data fetching
         } else {
+          console.log("disconnect");
+
           socket.disconnect(true);
         }
       } catch (error) {
