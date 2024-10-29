@@ -481,7 +481,7 @@ async function findUserByGoogleId(googleId) {
 }
 
 async function createUser({ name, email, googleId }) {
-  const { uniqueId, discriminator, name } = await generateUniqueId(name);
+  const { uniqueId, discriminator } = await generateUniqueId(name);
   const uniqePassword = generatePassword();
   const hashedPassword = await argon2.hash(uniqePassword, 10);
 
