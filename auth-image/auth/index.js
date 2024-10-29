@@ -556,7 +556,7 @@ app.post("/auth/sign-google-idToken", async (req, res) => {
 });
 
 app.post("/auth/refreshToken", async (req, res) => {
-  const refreshToken = res.body.refreshToken;
+  const refreshToken = req.body.refreshToken;
 
   if (!refreshToken) {
     return res.status(400).json({ message: "No refresh token provided" });
