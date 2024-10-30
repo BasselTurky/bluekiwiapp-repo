@@ -351,6 +351,7 @@ app.post("/auth/login-data", async (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const date = req.body.date;
+  console.log("got email and password", email, " ", password);
 
   // Get email from database if available
   try {
@@ -359,6 +360,7 @@ app.post("/auth/login-data", async (req, res) => {
     if (!user || !(await validPassword(user, password))) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
+    console.log("all good");
 
     // Create access token
     const accessToken = generateAccessToken(user);
@@ -400,6 +402,13 @@ app.post("/auth/login-data", async (req, res) => {
     // #endregion
 
     await storeRefreshTokenInDB(refreshToken, email);
+    console.log(`
+      sending tokens to user:
+
+      ${accessToken},
+
+      ${refreshToken}
+      `);
 
     return res.status(200).send({ accessToken, refreshToken });
   } catch (error) {
@@ -431,6 +440,11 @@ app.post("/auth/login-data", async (req, res) => {
 // }
 
 // ----
+
+app.post("/auth/logErros", async (req, res) => {
+  const error = req.body.error;
+  console.log(error);
+});
 
 async function generateUniqueId(name) {
   // Helper function to check if a specific discriminator exists for a given name
