@@ -3,7 +3,7 @@ const path = require("path");
 const app = express();
 
 // Define a route for `app-ads.txt`
-app.get("/app-ads.txt", (req, res) => {
+app.get("/add-ads.txt", (req, res) => {
   res.sendFile(path.join(__dirname, "public/add-ads.txt")); // Update the path accordingly
 });
 
