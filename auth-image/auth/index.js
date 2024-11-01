@@ -441,9 +441,9 @@ app.post("/auth/login-data", async (req, res) => {
 
 // ----
 
-app.post("/auth/logErros", async (req, res) => {
+app.post("/auth/logErrors", async (req, res) => {
   const error = req.body.error;
-  console.log(error);
+  console.log("FrontEnd Error: ", error);
 });
 
 async function generateUniqueId(name) {
