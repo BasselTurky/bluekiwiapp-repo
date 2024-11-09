@@ -530,6 +530,8 @@ app.post("/auth/sign-google-idToken", async (req, res) => {
     // let ticket
     const idToken = req.body.idToken;
     // try {
+    // console.log("idToken  :  ", idToken);
+
     const ticket = await client.verifyIdToken({
       idToken: idToken,
       audience: clientId,
