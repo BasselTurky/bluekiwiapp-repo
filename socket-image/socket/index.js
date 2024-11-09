@@ -1151,9 +1151,17 @@ io.on("connection", (socket) => {
       // );
       // let result = Object.values(JSON.parse(JSON.stringify(queryCoins)));
       const user = rows[0];
+      console.log("coins:");
+
+      console.log(gained_coins);
+      console.log(user.coins);
+
       let db_coins = user.coins;
       // save coin
+      console.log(db_coins);
+
       let new_coins_amount = db_coins + gained_coins;
+      console.log(new_coins_amount);
 
       const updateQuery = `
       UPDATE users SET coins = ? WHERE email = ?
