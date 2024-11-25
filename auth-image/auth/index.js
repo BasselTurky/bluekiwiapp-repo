@@ -66,17 +66,28 @@ const createAccountLimiter = rateLimit({
 
 const transporter = nodemailer.createTransport({
   // service: "Hotmail",
-  name: "smtp-mail.outlook.com",
-  host: "smtp-mail.outlook.com",
-  // port: 587,
+  // name: "smtp.gmail.com",
+  host: "smtp.gmail.com",
+  port: 465,
   auth: {
-    user: process.env.SERVER_EMAIL,
-    pass: process.env.TRANSPORTER_EMAIL_PASS,
+    user: process.env.TRANSPORTER_GMAIL_APP_ACCOUNT,
+    pass: process.env.TRANSPORTER_GMAIL_PASS,
   },
-  tls: {
-    rejectUnauthorized: false,
-  },
+  secure: true,
 });
+// const transporter = nodemailer.createTransport({
+//   // service: "Hotmail",
+//   name: "smtp-gmail.outlook.com",
+//   host: "smtp-mail.outlook.com",
+//   // port: 587,
+//   auth: {
+//     user: process.env.SERVER_EMAIL,
+//     pass: process.env.TRANSPORTER_EMAIL_PASS,
+//   },
+//   tls: {
+//     rejectUnauthorized: false,
+//   },
+// });
 // app.get("/auth/delete-form-view", (req, res) => {
 //   res.sendFile(path.join(__dirname, "public", "index.html"));
 // });
@@ -226,7 +237,7 @@ app.post("/auth/signup-data", async (req, res) => {
     // Construct verification email
     const verificationUrl = `https://bluekiwiapp.com/auth/verify/${token}`;
     const mailOptions = {
-      from: process.env.SERVER_EMAIL,
+      from: `Blue Kiwi ${process.env.TRANSPORTER_GMAIL_APP_ACCOUNT}`,
       to: email,
       subject: "Verification email",
       html: createVerificationEmail(verificationUrl),

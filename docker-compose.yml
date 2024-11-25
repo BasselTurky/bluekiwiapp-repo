@@ -18,12 +18,13 @@ services:
       - JWT_SECRET=6708294
       - GOOGLE_CLIENT_ID=525928726797-rd1pdvoma65egtaakptdrkmtjc7k8h0i.apps.googleusercontent.com
       - TRANSPORTER_EMAIL_PASS=kq4mgg8yUNvG7G94Blue
+      - TRANSPORTER_GMAIL_APP_ACCOUNT=bluekiwiapp@gmail.com
+      - TRANSPORTER_GMAIL_APP_PASS=neli ljrj vpya lyhy
       - SERVER_EMAIL=bluekiwiapp@outlook.com
       - ACCESS_TOKEN_SECRET=blue6708294kiwi
       - REFRESH_TOKEN_SECRET=kiwi1117734644blue
       - SMTP_NAME=bluekiwiapp.com
     restart: unless-stopped
-
 
   node-auth:
     build:
@@ -48,7 +49,6 @@ services:
       - SMTP_NAME=bluekiwiapp.com
     restart: unless-stopped
 
-
   node-ads:
     build:
       context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:ads-image
@@ -72,7 +72,6 @@ services:
       - SMTP_NAME=bluekiwiapp.com
     restart: unless-stopped
 
-
   node-cron:
     build:
       context: git@github.com:BasselTurky/bluekiwiapp-repo.git#main:cron-image
@@ -93,12 +92,11 @@ services:
       - SMTP_NAME=bluekiwiapp.com
     restart: unless-stopped
 
-
     # ports:
     #   - "3004:3004"
-      # - TRANSPORTER_EMAIL_PASS=Bb6708294
-      # - SERVER_EMAIL=invite.me.application@hotmail.com
-      # - SSH_AUTH_SOCK=$SSH_AUTH_SOCK
+    # - TRANSPORTER_EMAIL_PASS=Bb6708294
+    # - SERVER_EMAIL=invite.me.application@hotmail.com
+    # - SSH_AUTH_SOCK=$SSH_AUTH_SOCK
     # volumes:
     #   - $SSH_AUTH_SOCK:$SSH_AUTH_SOCK
 
@@ -151,62 +149,62 @@ services:
   #     - SERVER_EMAIL=invite.me.application@hotmail.com
   #     - SMTP_NAME=bluekiwiapp.com
   #   restart: unless-stopped
-      # args:
-      #   - SSH_AUTH_SOCK=/ssh-agent
-      # ssh:
-      #   - default
-    # volumes:
-    #   # - ssh-agent:/ssh-agent
-    #   - $SSH_AUTH_SOCK:/ssh-agent
-    #   - /home/blue/.ssh/id_rsa:/root/.ssh/id_rsa
-    # environment:
-    #   - SSH_AUTH_SOCK=/ssh-agent
-    # volumes:
-    # - $SSH_AUTH_SOCK:/ssh-agent
-    # environment:
-    # volumes:
-    #   - $SSH_AUTH_SOCK:/ssh-agent
-      # - TRANSPORTER_EMAIL_PASS=Bb6708294
-      # - SERVER_EMAIL=invite.me.application@hotmail.com
-    # command: sh -c 'eval "$(ssh-agent -s)" && sshpass -p "$SSH_PASSPHRASE" ssh-add /home/blue/.ssh/id_rsa'
-    # ports:
-    #   - "3002:3002"
-    # depends_on:
-    #   mysqldb:
-    #     condition: service_healthy
-    # networks:
-    #   - internalnet
-      # args:
-      #   - SSH_AUTH_SOCK=/ssh-agent
-      # ssh:
-      #   - default
-    # volumes:
-    #   # - ssh-agent:/ssh-agent
-    #   - $SSH_AUTH_SOCK:/ssh-agent
-    #   - /home/blue/.ssh/id_rsa:/root/.ssh/id_rsa
-    # environment:
-    #   - SSH_AUTH_SOCK=/ssh-agent
-    # volumes:
-    # - $SSH_AUTH_SOCK:/ssh-agent
-    # environment:
-    # volumes:
-    #   - $SSH_AUTH_SOCK:/ssh-agent
-      # - SSH_AUTH_SOCK=/ssh-agent
-      # - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
-      # - SSH_AUTH_SOCK=/tmp/ssh-XXXXXXgO0BFH/agent.200042
-      # - TRANSPORTER_EMAIL_PASS=Bb6708294
-      # - SERVER_EMAIL=invite.me.application@hotmail.com
-    # command: sh -c 'eval "$(ssh-agent -s)" && sshpass -p "$SSH_PASSPHRASE" ssh-add /home/blue/.ssh/id_rsa'
-    # ports:
-    #   - "3002:3002"
-    # depends_on:
-    #   mysqldb:
-    #     condition: service_healthy
-    # networks:
-    #   - internalnet
-      # - SSH_AUTH_SOCK=/ssh-agent
-      # - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
-      # - SSH_AUTH_SOCK=/tmp/ssh-XXXXXXgO0BFH/agent.200042
+  # args:
+  #   - SSH_AUTH_SOCK=/ssh-agent
+  # ssh:
+  #   - default
+  # volumes:
+  #   # - ssh-agent:/ssh-agent
+  #   - $SSH_AUTH_SOCK:/ssh-agent
+  #   - /home/blue/.ssh/id_rsa:/root/.ssh/id_rsa
+  # environment:
+  #   - SSH_AUTH_SOCK=/ssh-agent
+  # volumes:
+  # - $SSH_AUTH_SOCK:/ssh-agent
+  # environment:
+  # volumes:
+  #   - $SSH_AUTH_SOCK:/ssh-agent
+  # - TRANSPORTER_EMAIL_PASS=Bb6708294
+  # - SERVER_EMAIL=invite.me.application@hotmail.com
+  # command: sh -c 'eval "$(ssh-agent -s)" && sshpass -p "$SSH_PASSPHRASE" ssh-add /home/blue/.ssh/id_rsa'
+  # ports:
+  #   - "3002:3002"
+  # depends_on:
+  #   mysqldb:
+  #     condition: service_healthy
+  # networks:
+  #   - internalnet
+  # args:
+  #   - SSH_AUTH_SOCK=/ssh-agent
+  # ssh:
+  #   - default
+  # volumes:
+  #   # - ssh-agent:/ssh-agent
+  #   - $SSH_AUTH_SOCK:/ssh-agent
+  #   - /home/blue/.ssh/id_rsa:/root/.ssh/id_rsa
+  # environment:
+  #   - SSH_AUTH_SOCK=/ssh-agent
+  # volumes:
+  # - $SSH_AUTH_SOCK:/ssh-agent
+  # environment:
+  # volumes:
+  #   - $SSH_AUTH_SOCK:/ssh-agent
+  # - SSH_AUTH_SOCK=/ssh-agent
+  # - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
+  # - SSH_AUTH_SOCK=/tmp/ssh-XXXXXXgO0BFH/agent.200042
+  # - TRANSPORTER_EMAIL_PASS=Bb6708294
+  # - SERVER_EMAIL=invite.me.application@hotmail.com
+  # command: sh -c 'eval "$(ssh-agent -s)" && sshpass -p "$SSH_PASSPHRASE" ssh-add /home/blue/.ssh/id_rsa'
+  # ports:
+  #   - "3002:3002"
+  # depends_on:
+  #   mysqldb:
+  #     condition: service_healthy
+  # networks:
+  #   - internalnet
+  # - SSH_AUTH_SOCK=/ssh-agent
+  # - SSH_AUTH_SOCK= $SSH_AUTH_SOCK
+  # - SSH_AUTH_SOCK=/tmp/ssh-XXXXXXgO0BFH/agent.200042
 # volumes:
 #   ssh-agent:
 # volumes:
