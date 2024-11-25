@@ -68,8 +68,8 @@ const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
   auth: {
-    user: process.env.TRANSPORTER_GMAIL_APP_ACCOUNT,
-    pass: process.env.TRANSPORTER_GMAIL_PASS,
+    user: "bluekiwiapp@gmail.com",
+    pass: "neli ljrj vpya lyhy",
   },
   secure: true,
 });
@@ -231,11 +231,12 @@ app.post("/auth/signup-data", async (req, res) => {
     const token = jwt.sign({ data: newUser }, process.env.JWT_SECRET, {
       expiresIn: 600, // 10 minutes
     });
+    console.log(transporter);
 
     // Construct verification email
     const verificationUrl = `https://bluekiwiapp.com/auth/verify/${token}`;
     const mailOptions = {
-      from: `Blue Kiwi <${process.env.TRANSPORTER_GMAIL_APP_ACCOUNT}>`,
+      from: `Blue Kiwi <bluekiwiapp@gmail.com>`,
       to: email,
       subject: "Verification email",
       html: createVerificationEmail(verificationUrl),
