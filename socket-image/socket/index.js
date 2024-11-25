@@ -88,7 +88,7 @@ io.use((socket, next) => {
       // Attach user information to the socket for further use
       socket.user = decoded;
       console.log("decoded");
-
+      // username, email
       try {
         const email = socket.user.email;
 
@@ -154,48 +154,45 @@ io.on("connection", (socket) => {
     delete allUsers[email];
   });
 
-  socket.on("add-user", async () => {
-    try {
-      // const decoded = decodingToken(token);
-      // if (decoded) {
-      // const email = decoded.email;
-      const email = socket.user.email;
+  // socket.on("add-user", async () => {
+  //   try {
+  //     // const decoded = decodingToken(token);
+  //     // if (decoded) {
+  //     // const email = decoded.email;
+  //     const email = socket.user.email;
 
-      if (allUsers[email]) {
-        console.log(allUsers);
-        // disconnect older socket
-        const olderSocketID = allUsers[email].socket;
-        const olderSocket = io.sockets.sockets.get(olderSocketID);
-        if (olderSocket) {
-          olderSocket.emit("force-disconnect");
-        }
-      }
-      // overwrite older socket
-      allUsers[email] = { socket: socket.id };
+  //     if (allUsers[email]) {
+  //       console.log(allUsers);
+  //       // disconnect older socket
+  //       const olderSocketID = allUsers[email].socket;
+  //       const olderSocket = io.sockets.sockets.get(olderSocketID);
+  //       if (olderSocket) {
+  //         olderSocket.emit("force-disconnect");
+  //       }
+  //     }
+  //     // overwrite older socket
+  //     allUsers[email] = { socket: socket.id };
 
-      // send userinfo of {email} through the socket
-      const userQuery = `
-      SELECT name, email, uid, coins FROM users WHERE email = ?
-      `;
-      console.log(`
-      SELECT name, email, uid, coins FROM users WHERE email = '${email}'
-      `);
-      const [rows, fields] = await pool.execute(userQuery, [email]);
+  //     // send userinfo of {email} through the socket
+  //     const userQuery = `
+  //     SELECT firstname,,lastname, email, username, coins FROM users WHERE email = ?
+  //     `;
+  //     const [rows, fields] = await pool.execute(userQuery, [email]);
 
-      // const result = await pool.query(
-      //   `SELECT name, email, uid, coins FROM users WHERE email = '${email}'`
-      // );
-      console.log("rows: ", rows);
-      if (rows.length) {
-        console.log("user itself: ", rows[0]);
-        socket.emit("userInfo", rows[0]);
-      }
+  //     // const result = await pool.query(
+  //     //   `SELECT name, email, uid, coins FROM users WHERE email = '${email}'`
+  //     // );
+  //     console.log("rows: ", rows);
+  //     if (rows.length) {
+  //       console.log("user itself: ", rows[0]);
+  //       socket.emit("userInfo", rows[0]);
+  //     }
 
-      // }
-    } catch (error) {
-      console.error("add-user database error", error);
-    }
-  });
+  //     // }
+  //   } catch (error) {
+  //     console.error("add-user database error", error);
+  //   }
+  // });
 
   //   socket.on("get-user-giveaway-history", async () => {
   //     const email = socket.user.email;
@@ -431,7 +428,7 @@ io.on("connection", (socket) => {
     try {
       const activeGiveaway = await getActiveGiveaway(type);
       const activeGiveawayId = activeGiveaway.id;
-      const userUid = socket.user.uid;
+      const userUid = socket.user.username;
       const isUserAParticipant = await checkIfUserExistsInParticipants(
         userUid,
         activeGiveawayId
@@ -454,7 +451,7 @@ io.on("connection", (socket) => {
       if (!exists) {
         const activeGiveaway = await getActiveGiveaway(type);
         const activeGiveawayId = activeGiveaway.id;
-        const userUid = socket.user.uid;
+        const userUid = socket.user.username;
         const isUserAParticipant = await checkIfUserExistsInParticipants(
           userUid,
           activeGiveawayId
@@ -621,7 +618,7 @@ io.on("connection", (socket) => {
   socket.on("join-giveaway", async (giveawayId, giveawayType) => {
     try {
       const email = socket.user.email;
-      const userUid = socket.user.uid;
+      const userUid = socket.user.username;
       const consumedCoins = 10;
 
       // Check if the giveaway is active
@@ -666,7 +663,7 @@ io.on("connection", (socket) => {
           const historyQuery = `
             SELECT p.winner, p.received, g.id, g.date, g.reward_value_usd, g.status, g.type, g.winnerUid
             FROM participants p
-            JOIN users u ON p.userUid = u.uid
+            JOIN users u ON p.userUid = u.username
             JOIN giveaways g ON p.giveawayId = g.id
             WHERE u.email = ?
             ORDER BY g.id DESC;
@@ -764,7 +761,7 @@ io.on("connection", (socket) => {
 
     try {
       const email = socket.user.email;
-      const userUid = socket.user.uid;
+      const userUid = socket.user.username;
 
       const success = await updateClaimedGiveawayDetails(
         selectedGift,
@@ -858,7 +855,7 @@ io.on("connection", (socket) => {
 
   //         const uniqueId = name + "#" + paddedNumber;
 
-  //         //TODO generate password, add this password to the account
+  //
   //         // and send it to the user in an email
 
   //         const queryResult = await pool.query(
@@ -1505,7 +1502,7 @@ async function getHistoryGiveaways(email, offset) {
     FROM 
         giveaways g
     JOIN participants p ON g.id = p.giveawayId
-    JOIN users u ON p.userUid = u.uid
+    JOIN users u ON p.userUid = u.username
     WHERE 
         g.status = 'ended'
         AND u.email = ?
@@ -1559,7 +1556,7 @@ async function updateClaimedGiveawayDetails(
 async function fetchUserFromDB(email) {
   try {
     const query = `
-  SELECT name, email, uid, coins FROM users WHERE email = ?
+  SELECT firstname,lastname, email, username, coins FROM users WHERE email = ?
   `;
     const [rows] = await pool.execute(query, [email]);
     return rows[0];

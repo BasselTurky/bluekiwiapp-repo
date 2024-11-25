@@ -97,206 +97,214 @@ app.post("/auth/delete-form", async (req, res) => {
 });
 // used - Register
 
-// add rate limiter : to do
-app.post("/auth/register-data", async (req, res) => {
-  try {
-    const name = req.body.name;
-    const email = req.body.email;
-    const password = req.body.password;
-    // const paypal = req.body.paypal;
+async function getRandomAvailableDiscriminator(name) {
+  const query = `
+  SELECT discriminator FROM users WHERE name = ?
+  `;
 
-    // check if email is valid
-    let email_validation_results = await emailValidator.validate({
+  const [rows] = await pool.execute(query, [name]);
+  const discriminatorsInDatabase = rows.map((row) => row.discriminator);
+
+  const allDiscriminators = Array.from({ length: 9999 }, (_, i) => i + 1);
+  const takenDiscriminators = new Set(discriminatorsInDatabase); // Result from SQL query
+  const availableArray = allDiscriminators.filter(
+    (d) => !takenDiscriminators.has(d)
+  );
+
+  if (availableArray.length === 0) {
+    console.log("No discriminators available, user must select a new name.");
+    return {
+      success: false,
+    };
+  } else {
+    const randomDiscriminator =
+      availableArray[Math.floor(Math.random() * availableArray.length)];
+    console.log("Random available discriminator:", randomDiscriminator);
+    return {
+      success: true,
+      discriminator: randomDiscriminator,
+    };
+  }
+}
+
+function generateDiscriminator(length = 6) {
+  const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+  let result = "";
+  for (let i = 0; i < length; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+}
+
+function createBasename(firstname, lastname) {
+  function capitalizeName(name) {
+    const lowerCaseName = name.toLowerCase();
+    return lowerCaseName.charAt(0).toUpperCase() + lowerCaseName.slice(1);
+  }
+
+  const capitalizedFirstname = capitalizeName(firstname);
+  const shortenedLastname =
+    lastname.charAt(0).toUpperCase() + lastname.charAt(1).toLowerCase();
+  const basename = capitalizedFirstname + "-" + shortenedLastname;
+
+  return basename;
+}
+
+async function createUsername(basename) {
+  // Step 1: Fetch existing discriminators from the database
+  const [rows] = await pool.execute(
+    `SELECT discriminator FROM users WHERE basename = ?`,
+    [basename]
+  );
+
+  // Step 2: Convert discriminators to a Set for quick lookup
+  const existingDiscriminators = new Set(rows.map((row) => row.discriminator));
+
+  let attempts = 50;
+
+  // Step 3: Generate unique discriminator
+  while (attempts > 0) {
+    const discriminator = generateDiscriminator(6);
+
+    if (!existingDiscriminators.has(discriminator)) {
+      const username = `${basename}#${discriminator}`;
+
+      return { username, discriminator }; // Success
+    }
+
+    attempts--;
+  }
+
+  throw new Error("Unable to generate a unique username. Please try again.");
+}
+
+// add rate limiter : to do
+
+app.post("/auth/signup-data", async (req, res) => {
+  const { firstname, lastname, email, password } = req.body;
+
+  try {
+    // Validate email
+    const emailValidationResults = await emailValidator.validate({
       email: email,
       validateSMTP: false,
     });
 
-    if (!email_validation_results.valid) {
-      return res.send({ type: "error", message: "Email is invalid" });
+    if (!emailValidationResults.valid) {
+      return res.status(400).json({ message: "Invalid email address." });
     }
 
     // Check if email already exists
-
-    const results = await pool.query(
-      `SELECT email FROM users WHERE email = '${email}'`
-    );
-
-    if (results.length) {
-      return res.send({ type: "error", message: "Email is already taken" });
+    const existingUser = await findUserByEmail(email);
+    if (existingUser) {
+      return res.status(409).json({ message: "Email is already taken." });
     }
 
-    // to do: needs testing
+    // Generate base name and username
+    const basename = createBasename(firstname, lastname);
+    const { username, discriminator } = createUsername(basename);
 
-    // check if name has discriminators available
+    // Hash the password
+    const hashedPassword = await argon2.hash(password);
 
-    let set = new Set(Array.from({ length: 9999 }, (_, i) => i + 1));
-    // check if name exists
-    const discriminatorQuery = await pool.query(
-      `SELECT discriminator FROM users WHERE name = '${name}'`
-    );
-
-    const discriminatorResult = Object.values(
-      JSON.parse(JSON.stringify(discriminatorQuery))
-    ); // array of objects
-
-    // extract discriminators from query
-    const discriminatorArray = discriminatorResult.map(
-      (result) => result.discriminator
-    );
-
-    // check if any discriminators are taken : for example Bassel#2224, Bassel#4852, Bassel#9983
-    if (discriminatorArray.length > 0) {
-      // delete existed discriminators from the Set
-      for (let i = 0; i < discriminatorArray.length; i++) {
-        set.delete(discriminatorArray[i]);
-      }
-    }
-
-    const availableDiscriminators = Array.from(set);
-    // check if all discriminators are taken
-
-    if (!availableDiscriminators.length) {
-      // infrom user that name is not available
-      return res.send({ tyoe: "error", message: "Name is not available." });
-    }
-
-    // hash the password
-    const hashedPassword = await argon2.hash(password, 10);
-
-    var newUserMysql = {
-      name: name,
-      email: email,
+    // Create user object
+    const newUser = {
+      firstname,
+      lastname,
+      basename,
+      discriminator,
+      username,
+      email,
       password: hashedPassword,
-      // paypal: paypal,
     };
-    // Create token to be sent in verification email
 
-    const token = jwt.sign({ data: newUserMysql }, process.env.JWT_SECRET, {
-      expiresIn: 600,
+    // Generate JWT for email verification
+    const token = jwt.sign({ data: newUser }, process.env.JWT_SECRET, {
+      expiresIn: 600, // 10 minutes
     });
 
-    // Email form
-    let url = `https://bluekiwiapp.com/auth/verify/${token}`;
+    // Construct verification email
+    const verificationUrl = `https://bluekiwiapp.com/auth/verify/${token}`;
     const mailOptions = {
-      // "invite.me.application@hotmail.com"
       from: process.env.SERVER_EMAIL,
       to: email,
       subject: "Verification email",
-      html: createVerificationEmail(url),
+      html: createVerificationEmail(verificationUrl),
     };
 
-    try {
-      transporter.sendMail(mailOptions, function (error, info) {
-        return res.send({
-          type: "success",
-          message: `Email sent to: ${email} , please check all mails`,
+    // Send verification email
+    transporter.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Email sending failed:", error);
+        return res.status(500).json({
+          message: "Error sending verification email. Please try again later.",
         });
+      }
+
+      return res.status(200).json({
+        message: `Verification email sent to: ${email}. Please check your inbox.`,
       });
-    } catch (error) {
-      console.log(error);
-      return res.send({
-        type: "error",
-        message: "ErrorID: E014",
-      });
-    }
-  } catch (error) {
-    console.log(error);
-    return res.send({
-      type: "error",
-      message: "ErrorID: E013",
     });
+  } catch (error) {
+    console.error("Error during signup:", error);
+    return res.status(500).json({ message: "Internal server error." });
   }
-  // get the data
 });
 
 app.get("/auth/verify/:token", async (req, res) => {
-  jwt.verify(req.params.token, process.env.JWT_SECRET, async (err, decoded) => {
-    if (err) {
+  try {
+    // Verify JWT token
+    const decoded = jwt.verify(req.params.token, process.env.JWT_SECRET);
+
+    const {
+      firstname,
+      lastname,
+      basename,
+      discriminator,
+      username,
+      email,
+      password,
+    } = decoded.data;
+
+    // Check if the user is already verified
+    const userCheckQuery = `SELECT * FROM users WHERE email = ?`;
+    const [existingUser] = await pool.query(userCheckQuery, [email]);
+
+    if (existingUser.length > 0) {
+      console.log("Already verified");
+      return res.render("verified.ejs");
+    }
+
+    // Insert new user into the database
+    const insertUserQuery = `
+      INSERT INTO users (firstname, lastname, basename, discriminator, username, email, password)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+    await pool.query(insertUserQuery, [
+      firstname,
+      lastname,
+      basename,
+      discriminator,
+      username,
+      email,
+      password,
+    ]);
+
+    console.log("User successfully verified and added to the database.");
+    return res.render("verified.ejs");
+  } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      console.error("Verification link expired:", error.message);
       return res.send(
         "<h1>Verification link expired, please register again</h1>"
       );
-    } else {
-      let name = decoded.data.name;
-      let email = decoded.data.email;
-      let password = decoded.data.password;
-      // let paypal = decoded.data.paypal;
-
-      const result = await pool.query(
-        `SELECT * FROM users WHERE email = '${email}'`
-      );
-
-      if (result.length) {
-        // edit
-        console.log("Already verified");
-        // return res.send({ type: "info", message: "Verified." });
-        return res.render("verified.ejs");
-      } else {
-        // insert data in database
-        try {
-          // create set of 9999 numbers to select from
-          let set = new Set(Array.from({ length: 9999 }, (_, i) => i + 1));
-          // check if name exists
-          const discriminatorQuery = await pool.query(
-            `SELECT discriminator FROM users WHERE name = '${name}'`
-          );
-
-          const discriminatorResult = Object.values(
-            JSON.parse(JSON.stringify(discriminatorQuery))
-          ); // array of objects
-          // currently 1 user > 4445 > [{discriminator: 4445}]
-
-          // extract discriminators from query
-          const discriminatorArray = discriminatorResult.map(
-            (result) => result.discriminator
-          );
-
-          // check if any discriminators are taken : for example Bassel#2224, Bassel#4852, Bassel#9983
-          if (discriminatorArray.length > 0) {
-            // delete existed discriminators from the Set
-            for (let i = 0; i < discriminatorArray.length; i++) {
-              set.delete(discriminatorArray[i]);
-            }
-          }
-
-          // check if discriminatorArray has 4445
-          console.log("second check", set.has(4445));
-
-          // select random number from Set
-
-          const availableDiscriminators = Array.from(set);
-          // check if all discriminators are taken
-
-          // if(!availableDiscriminators.length){
-          //   // infrom user that name is not available
-
-          // }
-
-          const randomIndex = Math.floor(
-            Math.random() * availableDiscriminators.length
-          );
-          const randomNumber = availableDiscriminators[randomIndex];
-          const paddedNumber = randomNumber.toString().padStart(4, "0");
-
-          const uniqueId = name + "#" + paddedNumber;
-
-          const queryResult = await pool.query(
-            `INSERT INTO users (name, discriminator, uid, email, password) VALUES ('${name}','${paddedNumber}','${uniqueId}','${email}','${password}')`
-          );
-
-          const result = Object.values(JSON.parse(JSON.stringify(queryResult)));
-
-          console.log(result);
-
-          return res.render("verified.ejs");
-        } catch (error) {
-          console.log(error);
-          console.log("Database Error");
-
-          return res.send("<h1>Error</h1>");
-        }
-      }
     }
-  });
+
+    console.error("Error during verification:", error.message);
+    return res.send(
+      "<h1>An error occurred during verification. Please try again later.</h1>"
+    );
+  }
 });
 
 async function findUser(email) {
@@ -319,7 +327,7 @@ async function validPassword(user, password) {
 
 function generateAccessToken(user) {
   return jwt.sign(
-    { uid: user.uid, email: user.email },
+    { username: user.username, email: user.email },
     process.env.ACCESS_TOKEN_SECRET,
     { expiresIn: "15m" }
   );
@@ -327,7 +335,7 @@ function generateAccessToken(user) {
 
 function generateRefreshToken(user) {
   return jwt.sign(
-    { uid: user.uid, email: user.email },
+    { username: user.username, email: user.email },
     process.env.REFRESH_TOKEN_SECRET,
     { expiresIn: "7d" }
   );
@@ -348,9 +356,8 @@ async function storeRefreshTokenInDB(refreshToken, email) {
 }
 
 app.post("/auth/login-data", async (req, res) => {
-  const email = req.body.email;
-  const password = req.body.password;
-  const date = req.body.date;
+  const { email, password } = req.body;
+
   console.log("got email and password", email, " ", password);
 
   // Get email from database if available
@@ -417,70 +424,12 @@ app.post("/auth/login-data", async (req, res) => {
   }
 });
 
-// async function checkGoogleId(googleId) {
-//   const query = `
-//   SELECT EXISTS (SELECT 1 FROM users WHERE googleid = ?) AS googleidExists
-//   `
-//   const [rows] = await pool.execute(query,[googleId])
-//   return rows[0].googleidExists
-// }
-// async function checkEmail(email) {
-//   const query = `
-//   SELECT EXISTS (SELECT 1 FROM users WHERE email = ?) AS emailExists
-//   `
-//   const [rows] = await pool.execute(query,[email])
-//   return rows[0].emailExists
-// }
-// async function checkIfExistsInDB(column, value, returnedAs) {
-//   const query = `
-//   SELECT EXISTS (SELECT 1 FROM users WHERE ${column} = ?) AS ${returnedAs}
-//   `
-//   const [rows] = await pool.execute(query,[value])
-//   return rows[0][returnedAs]
-// }
-
 // ----
 
 app.post("/auth/logErrors", async (req, res) => {
   const error = req.body.error;
   console.log("FrontEnd Error: ", error);
 });
-
-async function generateUniqueId(name) {
-  // Helper function to check if a specific discriminator exists for a given name
-  async function isDiscriminatorTaken(name, discriminator) {
-    const query = `
-      SELECT EXISTS (
-        SELECT 1 FROM users WHERE name = ? AND discriminator = ?
-      ) AS discriminatorExists
-    `;
-    const [rows] = await pool.execute(query, [name, discriminator]);
-    return rows[0].discriminatorExists;
-  }
-
-  // Try to generate a unique discriminator, max 10 attempts
-  let discriminator;
-  for (let attempt = 0; attempt < 10; attempt++) {
-    // Generate random number between 0001 and 9999
-    const randomNumber = Math.floor(Math.random() * 9999) + 1;
-    discriminator = randomNumber.toString().padStart(4, "0");
-
-    // Check if the discriminator is already taken for this name
-    const taken = await isDiscriminatorTaken(name, discriminator);
-
-    if (!taken) {
-      // If it's not taken, return the uniqueId
-      return {
-        uniqueId: `${name}#${discriminator}`,
-        discriminator: discriminator,
-        name: name,
-      };
-    }
-  }
-
-  // If we couldn't find a free discriminator after 10 tries, return an error
-  throw new Error("Failed to generate unique discriminator");
-}
 
 async function findUserByEmail(email) {
   const query = `SELECT * FROM users WHERE email = ?`;
@@ -493,17 +442,122 @@ async function findUserByGoogleId(googleId) {
   const [rows] = await pool.execute(query, [googleId]);
   return rows.length > 0 ? rows[0] : null;
 }
+// TODO HERE
 
-async function createUser({ name, email, googleId }) {
-  const { uniqueId, discriminator } = await generateUniqueId(name);
+async function updateGoogleIdForUser(email, googleId) {
+  const query = `UPDATE users SET googleid = ? WHERE email = ?`;
+  await pool.execute(query, [googleId, email]);
+}
+
+function splitName(fullname) {
+  const [firstname, lastname] = fullname.split(" ");
+  return { firstname, lastname };
+}
+// TODO
+function createBasenameForGoogle(firstname, lastname) {
+  const adjectives = [
+    "Awesome",
+    "Bright",
+    "Cheerful",
+    "Clever",
+    "Creative",
+    "Delightful",
+    "Energetic",
+    "Friendly",
+    "Happy",
+    "Incredible",
+    "Joyful",
+    "Kind",
+    "Lively",
+    "Magical",
+    "Nice",
+    "Optimistic",
+    "Playful",
+    "Radiant",
+    "Smart",
+    "Sunny",
+    "Talented",
+    "Unique",
+    "Vibrant",
+    "Warm",
+    "Zesty",
+  ];
+
+  const nouns = [
+    "Star",
+    "Sunshine",
+    "Rainbow",
+    "Butterfly",
+    "Kitten",
+    "Puppy",
+    "Flower",
+    "Gem",
+    "Cloud",
+    "Dream",
+    "Wave",
+    "Peach",
+    "Tree",
+    "Meadow",
+    "River",
+    "Moon",
+    "Lighthouse",
+    "Forest",
+    "Spark",
+    "Wish",
+    "Petal",
+    "Blossom",
+    "Ocean",
+    "Dove",
+    "Aurora",
+  ];
+
+  function getRandomElement(array) {
+    return array[Math.floor(Math.random() * array.length)];
+  }
+
+  function cleanAndProcessName(name, isFirstname) {
+    const cleanedName = name.replace(/[^a-zA-Z]/g, ""); // Remove non-alphabetical characters
+    if (cleanedName.length === 0) {
+      return isFirstname
+        ? getRandomElement(adjectives)
+        : getRandomElement(nouns);
+    }
+    return (
+      cleanedName.charAt(0).toUpperCase() + cleanedName.slice(1).toLowerCase()
+    );
+  }
+
+  const processedFirstname = cleanAndProcessName(firstname, true);
+  const processedLastname = cleanAndProcessName(lastname, false);
+  const processedLastnameLastChar = processedLastname.charAt(0);
+  const basename = `${processedFirstname}-${processedLastnameLastChar}`;
+  return { basename, processedFirstname, processedLastname };
+}
+
+async function createUserWithGoogleId({ fullname, email, googleId }) {
+  // const { uniqueId, discriminator } = await generateUniqueId(name);
+
+  const { firstname, lastname } = splitName(fullname);
+  const { basename, newFirstname, newLastname } = createBasenameForGoogle(
+    firstname,
+    lastname
+  );
+
+  const { username, discriminator } = createUsername(basename);
+
+  // const basename = createBasename(firstname, lastname);
+  // const { username, discriminator } = createUsername(basename);
+
   const uniqePassword = generatePassword();
   const hashedPassword = await argon2.hash(uniqePassword, 10);
 
-  const query = `INSERT INTO users (name, discriminator, uid, email,password, googleId) VALUES (?, ?, ?, ?, ?, ?)`;
+  const query = `INSERT INTO users (firstname, lastname, basename, discriminator, username, email, password, googleId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
   await pool.execute(query, [
-    name,
+    newFirstname,
+    newLastname,
+    basename,
     discriminator,
-    uniqueId,
+    username,
     email,
     hashedPassword,
     googleId,
@@ -520,17 +574,9 @@ async function createUser({ name, email, googleId }) {
   transporter.sendMail(mailOptions, function (error, info) {});
 }
 
-async function updateGoogleIdForUser(email, googleId) {
-  const query = `UPDATE users SET googleid = ? WHERE email = ?`;
-  await pool.execute(query, [googleId, email]);
-}
-
 app.post("/auth/sign-google-idToken", async (req, res) => {
   try {
-    // let ticket
     const idToken = req.body.idToken;
-    // try {
-    // console.log("idToken  :  ", idToken);
 
     const ticket = await client.verifyIdToken({
       idToken: idToken,
@@ -540,14 +586,14 @@ app.post("/auth/sign-google-idToken", async (req, res) => {
     const payload = ticket.getPayload();
     const googleId = payload.sub;
     const email = payload.email;
-    const name = payload.name;
+    const fullname = payload.name;
 
     let user = await findUserByGoogleId(googleId);
     if (!user) {
       user = await findUserByEmail(email);
 
       if (!user) {
-        await createUser({ name, email, googleId });
+        await createUserWithGoogleId({ fullname, email, googleId });
         user = await findUserByEmail(email);
       } else if (user.email === email && !user.googleId) {
         await updateGoogleIdForUser(email, googleId);
@@ -588,9 +634,9 @@ app.post("/auth/refreshToken", async (req, res) => {
     if (!rows.length || rows[0].refreshToken !== refreshToken) {
       return res.status(401).json({ message: "Invalid refresh token" });
     }
-    const user = { uid: decoded.uid, email: decoded.email };
+    const user = { username: decoded.username, email: decoded.email };
     const accessToken = generateAccessToken(user);
-
+    //TODO
     return res.status(200).json({ accessToken });
   } catch (error) {
     console.error("Refresh token verification failed", error);
@@ -1265,7 +1311,7 @@ function generatePassword() {
 
 //     const uniqueId = name + "#" + paddedNumber;
 
-//     //TODO generate password, add this password to the account
+//
 //     // and send it to the user in an email
 
 //     const uniqePassword = generatePassword();
@@ -1303,7 +1349,7 @@ function generatePassword() {
 // const user = results[0];
 
 // const tokenObject = { email: email, googleid: googleid, uid: user.uid };
-// // TODO if the email exists, retrun
+
 // // if not add new account
 // const token = jwt.sign(tokenObject, process.env.JWT_SECRET, {
 //   expiresIn: 2592000,
