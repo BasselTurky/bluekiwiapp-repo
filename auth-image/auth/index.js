@@ -191,6 +191,8 @@ async function createUsername(basename) {
 
 app.post("/auth/signup-data", async (req, res) => {
   const { firstname, lastname, email, password } = req.body;
+  console.log("firstname: ", firstname);
+  console.log("lastname: ", lastname);
 
   try {
     // Validate email
@@ -211,10 +213,13 @@ app.post("/auth/signup-data", async (req, res) => {
 
     // Generate base name and username
     const basename = createBasename(firstname, lastname);
+    console.log("basename: ", basename);
+
     const { username, discriminator } = createUsername(basename);
 
     // Hash the password
     const hashedPassword = await argon2.hash(password);
+    console.log("username: ", username);
 
     // Create user object
     const newUser = {
