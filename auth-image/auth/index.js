@@ -64,15 +64,28 @@ const createAccountLimiter = rateLimit({
 
 //....................................nodemailer setup.....................................
 
+// const transporter = nodemailer.createTransport({
+//   host: "smtp.gmail.com",
+//   port: 465,
+//   auth: {
+//     user: "bluekiwiapp@gmail.com",
+//     pass: "neli ljrj vpya lyhy",
+//   },
+//   secure: true,
+// });
 const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 465,
+  host: "smtp-mail.outlook.com",
+  port: 587, // SMTP port
+  secure: false, // Use TLS
   auth: {
-    user: "bluekiwiapp@gmail.com",
-    pass: "neli ljrj vpya lyhy",
+    user: "bluekiwiappSMTP01@outlook.com", // Your Outlook account
+    pass: "owjzkqpoguenmkbc", // Your Outlook password or app password
   },
-  secure: true,
+  tls: {
+    rejectUnauthorized: false, // Allow self-signed certificates (if needed)
+  },
 });
+
 // const transporter = nodemailer.createTransport({
 //   // service: "Hotmail",
 //   name: "smtp-gmail.outlook.com",
@@ -236,12 +249,12 @@ app.post("/auth/signup-data", async (req, res) => {
     const token = jwt.sign({ data: newUser }, process.env.JWT_SECRET, {
       expiresIn: 600, // 10 minutes
     });
-    console.log(transporter);
+    // console.log(transporter);
 
     // Construct verification email
     const verificationUrl = `https://bluekiwiapp.com/auth/verify/${token}`;
     const mailOptions = {
-      from: `Blue Kiwi <bluekiwiapp@gmail.com>`,
+      from: `Blue Kiwi <verify@bluekiwiapp.com>`,
       to: email,
       subject: "Verification email",
       html: createVerificationEmail(verificationUrl),
