@@ -81,9 +81,6 @@ const transporter = nodemailer.createTransport({
     user: "bluekiwiappSMTP01@outlook.com", // Your Outlook account
     pass: "owjzkqpoguenmkbc", // Your Outlook password or app password
   },
-  tls: {
-    rejectUnauthorized: false, // Allow self-signed certificates (if needed)
-  },
 });
 
 // const transporter = nodemailer.createTransport({
@@ -254,7 +251,7 @@ app.post("/auth/signup-data", async (req, res) => {
     // Construct verification email
     const verificationUrl = `https://bluekiwiapp.com/auth/verify/${token}`;
     const mailOptions = {
-      from: `Blue Kiwi <verify@bluekiwiapp.com>`,
+      from: `Blue Kiwi <info@bluekiwiapp.com>`,
       to: email,
       subject: "Verification email",
       html: createVerificationEmail(verificationUrl),
