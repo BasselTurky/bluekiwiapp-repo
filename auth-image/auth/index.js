@@ -74,12 +74,16 @@ const createAccountLimiter = rateLimit({
 //   secure: true,
 // });
 const transporter = nodemailer.createTransport({
+  name: "smtp-gmail.outlook.com",
   host: "smtp-mail.outlook.com",
   port: 587, // SMTP port
   secure: false, // Use TLS
   auth: {
     user: "bluekiwiappSMTP01@outlook.com", // Your Outlook account
     pass: "owjzkqpoguenmkbc", // Your Outlook password or app password
+  },
+  tls: {
+    rejectUnauthorized: false,
   },
 });
 
