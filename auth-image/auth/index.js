@@ -74,18 +74,23 @@ const createAccountLimiter = rateLimit({
 //   secure: true,
 // });
 const transporter = nodemailer.createTransport({
-  name: "smtp-mail.outlook.com",
-  host: "smtp-mail.outlook.com",
-  port: 587, // SMTP port
-  secure: false, // Use TLS
-  auth: {
-    user: "bluekiwiappSMTP01@outlook.com", // Your Outlook account
-    pass: "owjzkqpoguenmkbc", // Your Outlook password or app password
-  },
-  tls: {
-    rejectUnauthorized: false,
-  },
+  sendmail: true,
+  newline: "unix",
+  path: "/usr/sbin/sendmail", // Path to Postfix's sendmail binary
 });
+// const transporter = nodemailer.createTransport({
+//   name: "smtp-mail.outlook.com",
+//   host: "smtp-mail.outlook.com",
+//   port: 587, // SMTP port
+//   secure: false, // Use TLS
+//   auth: {
+//     user: "bluekiwiSMTP01@outlook.com", // Your Outlook account
+//     pass: "owjzkqpoguenmkbc", // Your Outlook password or app password
+//   },
+//   tls: {
+//     rejectUnauthorized: false,
+//   },
+// });
 
 // const transporter = nodemailer.createTransport({
 //   // service: "Hotmail",
@@ -255,7 +260,7 @@ app.post("/auth/signup-data", async (req, res) => {
     // Construct verification email
     const verificationUrl = `https://bluekiwiapp.com/auth/verify/${token}`;
     const mailOptions = {
-      from: `bluekiwiappSMTP01@outlook.com`,
+      from: '"Blue Kiwi App" <info@bluekiwiapp.com>',
       // from: `Blue Kiwi <info@bluekiwiapp.com>`,
       to: email,
       subject: "Verification email",
