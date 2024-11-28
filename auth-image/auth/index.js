@@ -251,7 +251,8 @@ app.post("/auth/signup-data", async (req, res) => {
     // Construct verification email
     const verificationUrl = `https://bluekiwiapp.com/auth/verify/${token}`;
     const mailOptions = {
-      from: `Blue Kiwi <info@bluekiwiapp.com>`,
+      from: `bluekiwiappSMTP01@outlook.com`,
+      // from: `Blue Kiwi <info@bluekiwiapp.com>`,
       to: email,
       subject: "Verification email",
       html: createVerificationEmail(verificationUrl),
