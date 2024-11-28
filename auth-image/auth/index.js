@@ -74,7 +74,7 @@ const createAccountLimiter = rateLimit({
 //   secure: true,
 // });
 const transporter = nodemailer.createTransport({
-  name: "smtp-gmail.outlook.com",
+  name: "smtp-mail.outlook.com",
   host: "smtp-mail.outlook.com",
   port: 587, // SMTP port
   secure: false, // Use TLS
