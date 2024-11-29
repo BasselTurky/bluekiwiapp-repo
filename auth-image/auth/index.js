@@ -83,8 +83,8 @@ const transporter = nodemailer.createTransport({
   port: 2525, // SMTP port
   secure: false, // Use STARTTLS (false for 587)
   auth: {
-    user: "bluekiwiapp.com", // Your Mailrelay username
-    pass: "KKGgGVffUwl8k5PH", // Your Mailrelay password
+    user: "mail@bluekiwiapp.com", // Your Mailrelay username
+    pass: "JgpLpBAoUgueD8tw", // Your Mailrelay password
   },
 });
 //-------------------------------------------------------------------
