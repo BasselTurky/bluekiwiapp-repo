@@ -73,10 +73,19 @@ const createAccountLimiter = rateLimit({
 //   },
 //   secure: true,
 // });
+// const transporter = nodemailer.createTransport({
+//   sendmail: true,
+//   newline: "unix",
+//   path: "/usr/sbin/sendmail", // Path to Postfix's sendmail binary
+// });
 const transporter = nodemailer.createTransport({
-  sendmail: true,
-  newline: "unix",
-  path: "/usr/sbin/sendmail", // Path to Postfix's sendmail binary
+  host: "smtp1.s.ipzmarketing.com", // SMTP host
+  port: 587, // SMTP port
+  secure: false, // Use STARTTLS (false for 587)
+  auth: {
+    user: "dwamzqepqlkv", // Your Mailrelay username
+    pass: "AbbH56ikhcRzjg", // Your Mailrelay password
+  },
 });
 // const transporter = nodemailer.createTransport({
 //   name: "smtp-mail.outlook.com",
