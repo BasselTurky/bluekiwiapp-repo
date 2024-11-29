@@ -193,18 +193,23 @@ async function createUsername(basename) {
     `SELECT discriminator FROM users WHERE basename = ?`,
     [basename]
   );
+  console.log("query done");
 
   // Step 2: Convert discriminators to a Set for quick lookup
   const existingDiscriminators = new Set(rows.map((row) => row.discriminator));
+  console.log(existingDiscriminators.size);
 
   let attempts = 50;
 
   // Step 3: Generate unique discriminator
   while (attempts > 0) {
     const discriminator = generateDiscriminator(6);
+    console.log("discriminator: ", discriminator);
 
     if (!existingDiscriminators.has(discriminator)) {
       const username = `${basename}#${discriminator}`;
+
+      console.log("loop: ", username);
 
       return { username, discriminator }; // Success
     }
