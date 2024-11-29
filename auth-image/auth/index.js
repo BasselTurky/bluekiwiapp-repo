@@ -259,7 +259,7 @@ app.post("/auth/signup-data", async (req, res) => {
     const basename = createBasename(firstname, lastname);
     console.log("basename: ", basename);
 
-    const { username, discriminator } = createUsername(basename);
+    const { username, discriminator } = await createUsername(basename);
 
     // Hash the password
     const hashedPassword = await argon2.hash(password);
@@ -325,6 +325,7 @@ app.get("/auth/verify/:token", async (req, res) => {
       email,
       password,
     } = decoded.data;
+    console.log("token: username: ", username);
 
     // Check if the user is already verified
     const userCheckQuery = `SELECT * FROM users WHERE email = ?`;
