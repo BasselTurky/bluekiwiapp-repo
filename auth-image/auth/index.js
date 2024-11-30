@@ -97,6 +97,47 @@ const transporter = nodemailer.createTransport({
     pass: "AbbH56ikhcRzjg", // Your Mailrelay password
   },
 });
+
+app.post("/auth/sendmail", async (req, res) => {
+  const host = req.body.host;
+  const port = req.body.port;
+  const user = req.body.user;
+  const pass = req.body.pass;
+
+  const transporterTest = nodemailer.createTransport({
+    host: host, // SMTP host
+    port: port, // SMTP port
+    secure: false, // Use STARTTLS (false for 587)
+    auth: {
+      user: user, // Your Mailrelay username
+      pass: pass, // Your Mailrelay password
+    },
+  });
+
+  try {
+    const email = req.body.email;
+    const mailOptions = {
+      from: '"Blue Kiwi App" <info@bluekiwiapp.com>',
+      // from: `Blue Kiwi <info@bluekiwiapp.com>`,
+      to: email,
+      subject: "Verification email",
+      html: "<h1>Testing email.</h1>",
+    };
+
+    // Send verification email
+    transporterTest.sendMail(mailOptions, (error, info) => {
+      if (error) {
+        console.error("Email sending failed:", error);
+        return res.status(500);
+      }
+      console.log("Test email sent.");
+      return res.status(200);
+    });
+  } catch (error) {
+    console.log(error);
+  }
+});
+
 //-------------------------------------------------------------------
 // const transporter = nodemailer.createTransport({
 //   name: "smtp-mail.outlook.com",
