@@ -121,7 +121,7 @@ app.post("/auth/sendmail", async (req, res) => {
     console.log(email);
 
     const mailOptions = {
-      from: '"Blue Kiwi App" <mail@bluekiwiapp.com>',
+      from: '"Blue Kiwi App" <info@bluekiwiapp.com>',
       // from: `Blue Kiwi <info@bluekiwiapp.com>`,
       to: email,
       subject: "Verification email",
