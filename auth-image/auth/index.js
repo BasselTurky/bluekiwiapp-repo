@@ -89,12 +89,12 @@ const createAccountLimiter = rateLimit({
 // });
 //-------------------------------------------------------------------
 const transporter = nodemailer.createTransport({
-  host: "smtp1.s.ipzmarketing.com", // SMTP host
+  host: "smtp-relay.brevo.com", // SMTP host
   port: 587, // SMTP port
   secure: false, // Use STARTTLS (false for 587)
   auth: {
-    user: "dwamzqepqlkv", // Your Mailrelay username
-    pass: "AbbH56ikhcRzjg", // Your Mailrelay password
+    user: "80fd60001@smtp-brevo.com", // Your Mailrelay username
+    pass: "zg6cvGXkMpjs195P", // Your Mailrelay password
   },
 });
 
@@ -743,7 +743,7 @@ app.post("/auth/refreshToken", async (req, res) => {
     }
     const user = { username: decoded.username, email: decoded.email };
     const accessToken = generateAccessToken(user);
-    //TODO
+
     return res.status(200).json({ accessToken });
   } catch (error) {
     console.error("Refresh token verification failed", error);
@@ -843,50 +843,44 @@ app.post("/auth/refresh-token", async (req, res) => {
   }
 });
 
+// TODO
 app.post("/auth/reset-password-data", async (req, res) => {
   try {
     const email = req.body.email;
 
-    const result = await pool.query(
-      `SELECT email FROM users WHERE email = '${email}'`
-    );
-
-    let resultArray = Object.values(JSON.parse(JSON.stringify(result)));
-
-    if (!resultArray.length) {
-      return res.send({ type: "error", message: "Email doesn't exist" });
-    } else {
-      var obj = { email: email };
-
-      const token = jwt.sign({ data: obj }, process.env.JWT_SECRET, {
-        expiresIn: 600,
-      });
-      let url = `https://bluekiwiapp.com/auth/new-password/${token}`;
-      const mailOptions = {
-        from: process.env.SERVER_EMAIL,
-        to: email,
-        subject: "Reset password",
-        html: createResetPassEmail(url),
-      };
-
-      transporter.sendMail(mailOptions, function (error, info) {
-        if (error) {
-          console.log(error);
-          return res.send({
-            type: "error",
-            message: "ErrorID: E018",
-          });
-        } else {
-          return res.send({
-            type: "success",
-            message: `Email sent to: ${email}, please check all mails`,
-          });
-        }
-      });
+    const existingUser = await findUserByEmail(email);
+    if (!existingUser) {
+      return res.status(409).json({ message: "Email doesn't exist" });
     }
+
+    var obj = { email: email };
+
+    const token = jwt.sign({ data: obj }, process.env.JWT_SECRET, {
+      expiresIn: 600,
+    });
+    let url = `https://bluekiwiapp.com/auth/new-password/${token}`;
+    const mailOptions = {
+      from: '"Blue Kiwi App" <info@bluekiwiapp.com>',
+      to: email,
+      subject: "Reset password",
+      html: createResetPassEmail(url),
+    };
+
+    transporter.sendMail(mailOptions, function (error, info) {
+      if (error) {
+        console.error("Email sending failed:", error);
+        return res.status(500).json({
+          message: "Error sending verification email. Please try again later.",
+        });
+      }
+
+      return res.status(200).json({
+        message: `Email sent to: ${email}. Please check your inbox.`,
+      });
+    });
   } catch (error) {
-    console.log("Error line 459: ", error);
-    return res.send({ type: "error", message: "ErrorID: E017" });
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error." });
   }
 });
 
@@ -894,9 +888,7 @@ app.get("/auth/new-password/:token", (req, res) => {
   try {
     jwt.verify(req.params.token, process.env.JWT_SECRET, (err, decoded) => {
       if (err) {
-        return res.send(
-          "<h1>Verification link expired, please register again</h1>"
-        );
+        return res.send("<h1>Verification link expired, please try again</h1>");
       } else {
         return res.render("newPassword.ejs", {
           email: decoded.data.email,
