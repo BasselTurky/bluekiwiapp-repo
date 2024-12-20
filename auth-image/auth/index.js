@@ -269,7 +269,7 @@ async function createUsername(basename) {
       const username = `${basename}#${discriminator}`;
       console.log("Generated unique username:", username);
 
-      return { username, discriminator }; // Success
+      return { username: username, discriminator: discriminator }; // Success
     }
 
     attempts--;
