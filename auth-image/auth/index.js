@@ -559,7 +559,11 @@ async function updateGoogleIdForUser(email, googleId) {
 }
 
 function splitName(fullname) {
+  console.log("inside split: ", fullname);
+
   const [firstname, lastname] = fullname.split(" ");
+  console.log("split return: ", firstname, lastname);
+
   return { firstname, lastname };
 }
 // TODO
@@ -645,14 +649,18 @@ function createBasenameForGoogle(firstname, lastname) {
 
 async function createUserWithGoogleId({ name, email, googleId }) {
   // const { uniqueId, discriminator } = await generateUniqueId(name);
+  console.log("inside create: ", name, email, googleId);
 
   const { firstname, lastname } = splitName(name);
+  console.log("out of split: ", firstname, lastname);
+
   const { basename, newFirstname, newLastname } = createBasenameForGoogle(
     firstname,
     lastname
   );
 
   const { username, discriminator } = createUsername(basename);
+  console.log("out of createUserame: ", username, discriminator);
 
   // const basename = createBasename(firstname, lastname);
   // const { username, discriminator } = createUsername(basename);
@@ -660,7 +668,22 @@ async function createUserWithGoogleId({ name, email, googleId }) {
   const uniqePassword = generatePassword();
   const hashedPassword = await argon2.hash(uniqePassword, 10);
 
+  console.log("hashedPass: ", hashedPassword);
+
   const query = `INSERT INTO users (firstname, lastname, basename, discriminator, username, email, password, googleId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+
+  console.log(
+    "into Query: ",
+    newFirstname,
+    newLastname,
+    basename,
+    discriminator,
+    username,
+    email,
+    hashedPassword,
+    googleId
+  );
+
   await pool.execute(query, [
     newFirstname,
     newLastname,
@@ -705,6 +728,8 @@ app.post("/auth/sign-google-idToken", async (req, res) => {
       user = await findUserByEmail(email);
 
       if (!user) {
+        console.log("before create: ", name, email, googleId);
+
         await createUserWithGoogleId({ name, email, googleId });
         user = await findUserByEmail(email);
       } else if (user.email === email && !user.googleId) {
