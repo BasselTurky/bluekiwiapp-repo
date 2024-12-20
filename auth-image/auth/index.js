@@ -269,6 +269,8 @@ async function createUsername(basename) {
       const username = `${basename}#${discriminator}`;
       console.log("Generated unique username:", username);
 
+      console.log("before return zzzzz :: ", username, discriminator);
+
       return { username: username, discriminator: discriminator }; // Success
     }
 
@@ -671,7 +673,11 @@ async function createUserWithGoogleId(firstname, lastname, email, googleId) {
   );
   console.log("createBasename return: ", basename, newFirstname, newLastname);
 
-  const { username, discriminator } = createUsername(basename);
+  const data = await createUsername(basename);
+
+  const username = data.username;
+  const discriminator = data.discriminator;
+
   console.log("out of createUserame: ", username, discriminator);
 
   // const basename = createBasename(firstname, lastname);
