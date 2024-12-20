@@ -647,12 +647,17 @@ function createBasenameForGoogle(firstname, lastname) {
   return { basename, processedFirstname, processedLastname };
 }
 
-async function createUserWithGoogleId({ name, email, googleId }) {
+async function createUserWithGoogleId({
+  firstname,
+  lastname,
+  email,
+  googleId,
+}) {
   // const { uniqueId, discriminator } = await generateUniqueId(name);
-  console.log("inside create: ", name, email, googleId);
+  // console.log("inside create: ", name, email, googleId);
 
-  const { firstname, lastname } = splitName(name);
-  console.log("out of split: ", firstname, lastname);
+  // const { firstname, lastname } = splitName(name);
+  // console.log("out of split: ", firstname, lastname);
 
   const { basename, newFirstname, newLastname } = createBasenameForGoogle(
     firstname,
@@ -721,16 +726,17 @@ app.post("/auth/sign-google-idToken", async (req, res) => {
 
     const googleId = payload.sub;
     const email = payload.email;
-    const name = payload.name;
+    const firstname = payload.given_name;
+    const lastname = payload.family_name;
 
     let user = await findUserByGoogleId(googleId);
     if (!user) {
       user = await findUserByEmail(email);
 
       if (!user) {
-        console.log("before create: ", name, email, googleId);
+        // console.log("before create: ", name, email, googleId);
 
-        await createUserWithGoogleId({ name, email, googleId });
+        await createUserWithGoogleId({ firstname, lastname, email, googleId });
         user = await findUserByEmail(email);
       } else if (user.email === email && !user.googleId) {
         await updateGoogleIdForUser(email, googleId);
