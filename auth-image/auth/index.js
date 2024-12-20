@@ -693,16 +693,19 @@ app.post("/auth/sign-google-idToken", async (req, res) => {
     });
 
     const payload = ticket.getPayload();
+
+    console.log("payload: ", payload);
+
     const googleId = payload.sub;
     const email = payload.email;
-    const fullname = payload.name;
+    const name = payload.name;
 
     let user = await findUserByGoogleId(googleId);
     if (!user) {
       user = await findUserByEmail(email);
 
       if (!user) {
-        await createUserWithGoogleId({ fullname, email, googleId });
+        await createUserWithGoogleId({ name, email, googleId });
         user = await findUserByEmail(email);
       } else if (user.email === email && !user.googleId) {
         await updateGoogleIdForUser(email, googleId);
