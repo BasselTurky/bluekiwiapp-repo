@@ -677,7 +677,7 @@ async function createUserWithGoogleId(firstname, lastname, email, googleId) {
   const query = `INSERT INTO users (firstname, lastname, basename, discriminator, username, email, password, googleId) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
 
   console.log(
-    "into Query: ",
+    "into Query:  ",
     newFirstname,
     newLastname,
     basename,
