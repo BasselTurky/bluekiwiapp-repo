@@ -569,6 +569,8 @@ function splitName(fullname) {
 // TODO
 function createBasenameForGoogle(firstname, lastname) {
   console.log("inside createBasename: ", firstname, lastname);
+  console.log(typeof firstname);
+  console.log(typeof lastname);
 
   const adjectives = [
     "Awesome",
@@ -632,6 +634,8 @@ function createBasenameForGoogle(firstname, lastname) {
 
   function cleanAndProcessName(name, isFirstname) {
     const cleanedName = name.replace(/[^a-zA-Z]/g, ""); // Remove non-alphabetical characters
+    console.log("cleaned name: ", cleanedName);
+
     if (cleanedName.length === 0) {
       return isFirstname
         ? getRandomElement(adjectives)
@@ -647,7 +651,11 @@ function createBasenameForGoogle(firstname, lastname) {
   const processedLastnameLastChar = processedLastname.charAt(0);
   const basename = `${processedFirstname}-${processedLastnameLastChar}`;
 
-  return { basename, processedFirstname, processedLastname };
+  return {
+    basename: basename,
+    newFirstname: processedFirstname,
+    newLastname: processedLastname,
+  };
 }
 
 async function createUserWithGoogleId(firstname, lastname, email, googleId) {
