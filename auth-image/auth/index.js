@@ -643,10 +643,10 @@ function createBasenameForGoogle(firstname, lastname) {
   return { basename, processedFirstname, processedLastname };
 }
 
-async function createUserWithGoogleId({ fullname, email, googleId }) {
+async function createUserWithGoogleId({ name, email, googleId }) {
   // const { uniqueId, discriminator } = await generateUniqueId(name);
 
-  const { firstname, lastname } = splitName(fullname);
+  const { firstname, lastname } = splitName(name);
   const { basename, newFirstname, newLastname } = createBasenameForGoogle(
     firstname,
     lastname
