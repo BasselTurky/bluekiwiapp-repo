@@ -568,6 +568,8 @@ function splitName(fullname) {
 }
 // TODO
 function createBasenameForGoogle(firstname, lastname) {
+  console.log("inside createBasename: ", firstname, lastname);
+
   const adjectives = [
     "Awesome",
     "Bright",
@@ -644,17 +646,13 @@ function createBasenameForGoogle(firstname, lastname) {
   const processedLastname = cleanAndProcessName(lastname, false);
   const processedLastnameLastChar = processedLastname.charAt(0);
   const basename = `${processedFirstname}-${processedLastnameLastChar}`;
+
   return { basename, processedFirstname, processedLastname };
 }
 
-async function createUserWithGoogleId({
-  firstname,
-  lastname,
-  email,
-  googleId,
-}) {
+async function createUserWithGoogleId(firstname, lastname, email, googleId) {
   // const { uniqueId, discriminator } = await generateUniqueId(name);
-  // console.log("inside create: ", name, email, googleId);
+  console.log("inside create: ", firstname, lastname, email, googleId);
 
   // const { firstname, lastname } = splitName(name);
   // console.log("out of split: ", firstname, lastname);
@@ -663,6 +661,7 @@ async function createUserWithGoogleId({
     firstname,
     lastname
   );
+  console.log("createBasename return: ", basename, newFirstname, newLastname);
 
   const { username, discriminator } = createUsername(basename);
   console.log("out of createUserame: ", username, discriminator);
@@ -729,6 +728,8 @@ app.post("/auth/sign-google-idToken", async (req, res) => {
     const firstname = payload.given_name;
     const lastname = payload.family_name;
 
+    console.log("extract: ", firstname, lastname, email, googleId);
+
     let user = await findUserByGoogleId(googleId);
     if (!user) {
       user = await findUserByEmail(email);
@@ -736,7 +737,7 @@ app.post("/auth/sign-google-idToken", async (req, res) => {
       if (!user) {
         // console.log("before create: ", name, email, googleId);
 
-        await createUserWithGoogleId({ firstname, lastname, email, googleId });
+        await createUserWithGoogleId(firstname, lastname, email, googleId);
         user = await findUserByEmail(email);
       } else if (user.email === email && !user.googleId) {
         await updateGoogleIdForUser(email, googleId);
