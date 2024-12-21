@@ -14,8 +14,14 @@ const rateLimit = require("express-rate-limit");
 
 const { OAuth2Client } = require("google-auth-library");
 
+// Android Client Id
+// Production : App signing Cert
 const clientId =
-  "109153830656-hge71eln0qk4a8m59o3rns68f2to1pjt.apps.googleusercontent.com";
+  "109153830656-1isvohatbn30rmbtd7q5tdbgib6j6unb.apps.googleusercontent.com";
+// Development : Upload Cert
+// const clientId =
+//   "109153830656-hge71eln0qk4a8m59o3rns68f2to1pjt.apps.googleusercontent.com";
+
 // const clientId = process.env.GOOGLE_CLIENT_ID;
 
 const client = new OAuth2Client(clientId);
