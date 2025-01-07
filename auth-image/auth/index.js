@@ -718,10 +718,10 @@ async function createUserWithGoogleId(firstname, lastname, email, googleId) {
     hashedPassword,
     googleId,
   ]);
-
+  // TODO
   const mailOptions = {
     // "invite.me.application@hotmail.com"
-    from: `"Blue Kiwi App" <${process.env.SERVER_EMAIL}>`,
+    from: `"Blue Kiwi App" <info@bluekiwiapp.com>`,
     to: email,
     subject: "Your Access Password",
     html: createGoogleUniqePassEmail(uniqePassword),
