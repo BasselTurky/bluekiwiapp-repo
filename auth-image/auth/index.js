@@ -1052,55 +1052,55 @@ app.post("/auth/user", async (req, res) => {
 //   }
 // });
 
-app.post("/auth/update-password", async (req, res) => {
-  try {
-    // let email = req.body.email;
-    // let current_device_id = req.body.current_device_id;
-    // let token = req.body.token;
-    // let currentPassword = req.body.currentPassword;
-    // let newPassword = req.body.newPassword;
-    const { token, currentPassword, newPassword } = req.body;
+// app.post("/auth/update-password", async (req, res) => {
+//   try {
+//     // let email = req.body.email;
+//     // let current_device_id = req.body.current_device_id;
+//     // let token = req.body.token;
+//     // let currentPassword = req.body.currentPassword;
+//     // let newPassword = req.body.newPassword;
+//     const { token, currentPassword, newPassword } = req.body;
 
-    let check_result = await check_device_id_from_token(token);
+//     let check_result = await check_device_id_from_token(token);
 
-    if (check_result.boolean) {
-      let email = check_result.email;
+//     if (check_result.boolean) {
+//       let email = check_result.email;
 
-      const queryResults = await pool.query(
-        `SELECT * FROM users WHERE email = '${email}'`
-      );
+//       const queryResults = await pool.query(
+//         `SELECT * FROM users WHERE email = '${email}'`
+//       );
 
-      const results = Object.values(JSON.parse(JSON.stringify(queryResults)));
+//       const results = Object.values(JSON.parse(JSON.stringify(queryResults)));
 
-      let user = results[0];
+//       let user = results[0];
 
-      if (!(await argon2.verify(user.password, currentPassword))) {
-        // wrong password
-        return res.send({ type: "wrong-password", message: "Wrong password!" });
-      }
+//       if (!(await argon2.verify(user.password, currentPassword))) {
+//         // wrong password
+//         return res.send({ type: "wrong-password", message: "Wrong password!" });
+//       }
 
-      const hashedPassword = await argon2.hash(newPassword, 10);
+//       const hashedPassword = await argon2.hash(newPassword, 10);
 
-      await pool.query(
-        `UPDATE users SET password = '${hashedPassword}' WHERE email = '${email}'`
-      );
+//       await pool.query(
+//         `UPDATE users SET password = '${hashedPassword}' WHERE email = '${email}'`
+//       );
 
-      return res.send({
-        type: "success",
-        message: "Password updated",
-      });
-    }
-  } catch (error) {
-    console.log(error);
+//       return res.send({
+//         type: "success",
+//         message: "Password updated",
+//       });
+//     }
+//   } catch (error) {
+//     console.log(error);
 
-    return res.send({ type: "error", message: "ErrorID: E031" });
-  }
+//     return res.send({ type: "error", message: "ErrorID: E031" });
+//   }
 
-  //   return res.status(200).send({ accessToken, refreshToken });
-  // } catch (error) {
-  //   console.log(error);
-  //   return res.status(500).json({ message: "Internal server error" });
-});
+//   //   return res.status(200).send({ accessToken, refreshToken });
+//   // } catch (error) {
+//   //   console.log(error);
+//   //   return res.status(500).json({ message: "Internal server error" });
+// });
 
 app.post("/auth/account-delete-request", async (req, res) => {
   try {
