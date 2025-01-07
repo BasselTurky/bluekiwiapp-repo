@@ -8,7 +8,7 @@ const jwt = require("jsonwebtoken");
 const pool = require("./database");
 // const pool = require("./databasePromise");
 const cors = require("cors");
-
+const argon2 = require("argon2");
 const { OAuth2Client } = require("google-auth-library");
 
 const clientId = process.env.GOOGLE_CLIENT_ID; // Replace with your Google client ID
