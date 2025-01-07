@@ -799,6 +799,81 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("update-password", async (data, callback) => {
+    try {
+      const { currentPassword, newPassword } = data;
+      const email = socket.user.email;
+      const userUid = socket.user.username;
+
+      const [rows] = await pool.execute(
+        "SELECT password FROM users WHERE email = ? AND username = ?",
+        [email, userUid]
+      );
+
+      if (rows.length === 0) {
+        // User not found
+        return callback({
+          type: "error",
+          message: "Something went wrong!",
+        });
+      }
+
+      // verifiy password
+      const currentHash = rows[0].password;
+      const isPasswordCorrect = await argon2.verify(
+        currentHash,
+        currentPassword
+      );
+      // handle verification errors
+      if (!isPasswordCorrect) {
+        return callback({
+          type: "wrong-password",
+          message: "Incorrect password.",
+        });
+      }
+
+      // Verify that the new password is not the same as the current password
+      const isNewPasswordSame = await argon2.verify(currentHash, newPassword);
+      if (isNewPasswordSame) {
+        return callback({
+          type: "error",
+          message: "New password cannot be the same as the current password.",
+        });
+      }
+
+      // Hash the new password
+      const newHash = await argon2.hash(newPassword);
+
+      // Update the password in the database
+      const [updateResult] = await pool.execute(
+        "UPDATE users SET password = ? WHERE email = ? AND username = ?",
+        [newHash, email, userUid]
+      );
+
+      if (updateResult.affectedRows === 0) {
+        // Update failed (unlikely but possible)
+        return callback({
+          type: "error",
+          message: "Password update failed. Please try again.",
+        });
+      }
+      // Emit a success response
+      return callback({
+        type: "success",
+        message: "Password updated successfully.",
+      });
+    } catch (error) {
+      console.error("Error in update-password:", error);
+
+      // Log the error (optional)
+      // Emit a generic error message
+      return callback({
+        type: "error",
+        message: "An unexpected error occurred. Please try again.",
+      });
+    }
+  });
+
   // socket.on("check-google-user", async (googleid, email, name) => {
   //   try {
   //     // check if googleid exists

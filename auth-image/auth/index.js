@@ -1056,9 +1056,10 @@ app.post("/auth/update-password", async (req, res) => {
   try {
     // let email = req.body.email;
     // let current_device_id = req.body.current_device_id;
-    let token = req.body.token;
-    let currentPassword = req.body.currentPassword;
-    let newPassword = req.body.newPassword;
+    // let token = req.body.token;
+    // let currentPassword = req.body.currentPassword;
+    // let newPassword = req.body.newPassword;
+    const { token, currentPassword, newPassword } = req.body;
 
     let check_result = await check_device_id_from_token(token);
 
@@ -1094,6 +1095,11 @@ app.post("/auth/update-password", async (req, res) => {
 
     return res.send({ type: "error", message: "ErrorID: E031" });
   }
+
+  //   return res.status(200).send({ accessToken, refreshToken });
+  // } catch (error) {
+  //   console.log(error);
+  //   return res.status(500).json({ message: "Internal server error" });
 });
 
 app.post("/auth/account-delete-request", async (req, res) => {
