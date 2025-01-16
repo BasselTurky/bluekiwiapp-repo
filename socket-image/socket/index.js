@@ -1108,12 +1108,15 @@ io.on("connection", (socket) => {
       `;
       const query_result = await pool.execute(query, [today]);
       // }
+      console.log(query_result);
 
       const results = [];
 
       for (const row of query_result) {
         const img_link = row.img_link;
         const average_color = row.average_color;
+        console.log(img_link);
+
         // Apply your function to the img_link (replace `yourFunction` with your actual function)
         const signedUrl = await generateSignedUrl("wallpapers", img_link);
 
