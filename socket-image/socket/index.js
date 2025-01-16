@@ -1073,46 +1073,16 @@ io.on("connection", (socket) => {
 
   socket.on("get-daily-wallpapers", async () => {
     console.log("inside daily wallpapers");
-
-    // var day = today.substring(8);
-
-    // var start_of_the_month = today.substring(0, 8) + "01";
-    // var end_of_the_month = today.substring(0, 8) + "27";
-
-    // var number_of_wallpapers = 20;
-
-    // let query_result;
-
-    // if (Number(day) > 27) {
-    //   // query_result = await pool.query(
-    //   //   `SELECT * FROM wallpapers WHERE date >= '${start_of_the_month}' AND date <= '${end_of_the_month}' ORDER BY downloads DESC LIMIT ${number_of_wallpapers}`
-    //   // );
-
-    //   const query = `
-    //   SELECT * FROM wallpapers WHERE date >= ? AND date <= ? ORDER BY downloads DESC LIMIT ?
-    //   `;
-
-    //   query_result = await pool.execute(query, [
-    //     start_of_the_month,
-    //     end_of_the_month,
-    //     number_of_wallpapers,
-    //   ]);
-    // } else {
-    // query_result = await pool.query(
-    //   `SELECT * FROM wallpapers WHERE date(date) = '${today}'`
-    // );
     try {
       var today = new Date().toISOString().split("T")[0];
-      const query = `
-      SELECT * FROM wallpapers WHERE date(date) = ?
-      `;
-      const query_result = await pool.execute(query, [today]);
-      // }
-      console.log(query_result);
+      const query = `SELECT * FROM wallpapers WHERE date(date) = ?`;
+      const [rows] = await pool.execute(query, [today]);
+
+      console.log(rows); // Check if rows contain the correct data
 
       const results = [];
 
-      for (const row of query_result) {
+      for (const row of rows) {
         const img_link = row.img_link;
         const average_color = row.average_color;
         console.log(img_link);
