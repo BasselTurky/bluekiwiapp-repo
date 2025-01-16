@@ -1072,6 +1072,8 @@ io.on("connection", (socket) => {
   });
 
   socket.on("get-daily-wallpapers", async () => {
+    console.log("inside daily wallpapers");
+
     // var day = today.substring(8);
 
     // var start_of_the_month = today.substring(0, 8) + "01";
@@ -1099,32 +1101,38 @@ io.on("connection", (socket) => {
     // query_result = await pool.query(
     //   `SELECT * FROM wallpapers WHERE date(date) = '${today}'`
     // );
-    var today = new Date().toISOString().split("T")[0];
-    const query = `
+    try {
+      var today = new Date().toISOString().split("T")[0];
+      const query = `
       SELECT * FROM wallpapers WHERE date(date) = ?
       `;
-    const query_result = await pool.execute(query, [today]);
-    // }
+      const query_result = await pool.execute(query, [today]);
+      // }
 
-    const results = [];
+      const results = [];
 
-    for (const row of query_result) {
-      const img_link = row.img_link;
-      const average_color = row.average_color;
-      // Apply your function to the img_link (replace `yourFunction` with your actual function)
-      const signedUrl = await generateSignedUrl("wallpapers", img_link);
+      for (const row of query_result) {
+        const img_link = row.img_link;
+        const average_color = row.average_color;
+        // Apply your function to the img_link (replace `yourFunction` with your actual function)
+        const signedUrl = await generateSignedUrl("wallpapers", img_link);
 
-      // Create an object with the processed image and average_color
-      const resultObject = {
-        img_link: signedUrl, // Result of your function
-        average_color: average_color, // Include the average_color
-      };
+        // Create an object with the processed image and average_color
+        const resultObject = {
+          img_link: signedUrl, // Result of your function
+          average_color: average_color, // Include the average_color
+        };
 
-      // Add the object to the results array
-      results.push(resultObject);
+        // Add the object to the results array
+        results.push(resultObject);
+      }
+
+      socket.emit("daily-wallpapers", { result: query_result[0], date: today });
+    } catch (error) {
+      console.log("daily wallpaper error:");
+
+      console.log(error);
     }
-
-    socket.emit("daily-wallpapers", { result: query_result[0], date: today });
   });
 
   socket.on(
