@@ -11,6 +11,22 @@ const cors = require("cors");
 const argon2 = require("argon2");
 const { OAuth2Client } = require("google-auth-library");
 
+const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+
+const cloudflateAccountId = "4bec7228ebef0487360976eb286b92a9";
+const accessKeyId = "a212e7bf9e6bda07da48b800d3f2177d";
+const secretAccessKey =
+  "292046a823deca5a6ccaa8b1df162df03da19270c2f106a3c135c5520629e7fd";
+const s3Client = new S3Client({
+  region: "auto", // Cloudflare R2 uses "auto" for the region
+  endpoint: `https://${cloudflateAccountId}.r2.cloudflarestorage.com`, // Replace with your Cloudflare account ID
+  credentials: {
+    accessKeyId: accessKeyId, // Your R2 access key
+    secretAccessKey: secretAccessKey, // Your R2 secret key
+  },
+});
+
 const clientId = process.env.GOOGLE_CLIENT_ID; // Replace with your Google client ID
 const jwt_secret = process.env.JWT_SECRET; // Replace with your JWT secret key
 
@@ -48,6 +64,16 @@ app.use(
     origin: "*",
   })
 );
+
+async function generateSignedUrl(bucketName, objectKey, expiresIn = 86400) {
+  const command = new GetObjectCommand({
+    Bucket: bucketName,
+    Key: objectKey,
+  });
+
+  const signedUrl = await getSignedUrl(s3Client, command, { expiresIn });
+  return signedUrl;
+}
 
 const server = http.createServer(app);
 const io = socketIo(server);
@@ -1046,51 +1072,56 @@ io.on("connection", (socket) => {
   });
 
   socket.on("get-daily-wallpapers", async () => {
-    // var date = new Date();
-    // var now_utc = Date.UTC(
-    //   date.getUTCFullYear(),
-    //   date.getUTCMonth(),
-    //   date.getUTCDate(),
-    //   date.getUTCHours(),
-    //   date.getUTCMinutes(),
-    //   date.getUTCSeconds()
+    // var day = today.substring(8);
+
+    // var start_of_the_month = today.substring(0, 8) + "01";
+    // var end_of_the_month = today.substring(0, 8) + "27";
+
+    // var number_of_wallpapers = 20;
+
+    // let query_result;
+
+    // if (Number(day) > 27) {
+    //   // query_result = await pool.query(
+    //   //   `SELECT * FROM wallpapers WHERE date >= '${start_of_the_month}' AND date <= '${end_of_the_month}' ORDER BY downloads DESC LIMIT ${number_of_wallpapers}`
+    //   // );
+
+    //   const query = `
+    //   SELECT * FROM wallpapers WHERE date >= ? AND date <= ? ORDER BY downloads DESC LIMIT ?
+    //   `;
+
+    //   query_result = await pool.execute(query, [
+    //     start_of_the_month,
+    //     end_of_the_month,
+    //     number_of_wallpapers,
+    //   ]);
+    // } else {
+    // query_result = await pool.query(
+    //   `SELECT * FROM wallpapers WHERE date(date) = '${today}'`
     // );
-    // var date_string = new Date(now_utc).toISOString();
-    // var today = date_string.substring(0, 10);
     var today = new Date().toISOString().split("T")[0];
-
-    var day = today.substring(8);
-
-    var start_of_the_month = today.substring(0, 8) + "01";
-    var end_of_the_month = today.substring(0, 8) + "27";
-
-    var number_of_wallpapers = 20;
-
-    let query_result;
-
-    if (Number(day) > 27) {
-      // query_result = await pool.query(
-      //   `SELECT * FROM wallpapers WHERE date >= '${start_of_the_month}' AND date <= '${end_of_the_month}' ORDER BY downloads DESC LIMIT ${number_of_wallpapers}`
-      // );
-
-      const query = `
-      SELECT * FROM wallpapers WHERE date >= ? AND date <= ? ORDER BY downloads DESC LIMIT ?
-      `;
-
-      query_result = await pool.execute(query, [
-        start_of_the_month,
-        end_of_the_month,
-        number_of_wallpapers,
-      ]);
-    } else {
-      // query_result = await pool.query(
-      //   `SELECT * FROM wallpapers WHERE date(date) = '${today}'`
-      // );
-
-      const query = `
+    const query = `
       SELECT * FROM wallpapers WHERE date(date) = ?
       `;
-      query_result = await pool.execute(query, [today]);
+    const query_result = await pool.execute(query, [today]);
+    // }
+
+    const results = [];
+
+    for (const row of query_result) {
+      const img_link = row.img_link;
+      const average_color = row.average_color;
+      // Apply your function to the img_link (replace `yourFunction` with your actual function)
+      const signedUrl = await generateSignedUrl("wallpapers", img_link);
+
+      // Create an object with the processed image and average_color
+      const resultObject = {
+        img_link: signedUrl, // Result of your function
+        average_color: average_color, // Include the average_color
+      };
+
+      // Add the object to the results array
+      results.push(resultObject);
     }
 
     socket.emit("daily-wallpapers", { result: query_result[0], date: today });
