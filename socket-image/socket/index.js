@@ -1100,7 +1100,7 @@ io.on("connection", (socket) => {
         results.push(resultObject);
       }
 
-      socket.emit("daily-wallpapers", { result: query_result[0], date: today });
+      socket.emit("daily-wallpapers", { result: rows[0], date: today });
     } catch (error) {
       console.log("daily wallpaper error:");
 
