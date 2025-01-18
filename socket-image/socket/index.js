@@ -1092,15 +1092,18 @@ io.on("connection", (socket) => {
 
         // Create an object with the processed image and average_color
         const resultObject = {
+          wallpaper_id: row.wallpaper_id,
+          date: row.date,
           img_link: signedUrl, // Result of your function
           average_color: average_color, // Include the average_color
+          downloads: row.downloads,
         };
 
         // Add the object to the results array
         results.push(resultObject);
       }
 
-      socket.emit("daily-wallpapers", { result: rows, date: today });
+      socket.emit("daily-wallpapers", { result: results, date: today });
     } catch (error) {
       console.log("daily wallpaper error:");
 
