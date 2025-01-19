@@ -87,7 +87,7 @@ var allUsers = {}; // currently online, inside the app
 
 io.use((socket, next) => {
   const accessToken = socket.handshake.auth.accessToken;
-  console.log(accessToken);
+  console.log("access token got from client: ", accessToken);
 
   if (!accessToken) {
     socket.emit("toasts", { type: "error", message: "Authentication error" });
