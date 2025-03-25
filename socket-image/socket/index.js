@@ -85,15 +85,90 @@ var allUsers = {}; // currently online, inside the app
 
 // var allUser = { youser@gmail.com : { socket : UUID }}
 
+// io.use((socket, next) => {
+//   const accessToken = socket.handshake.auth.accessToken;
+//   console.log("access token got from client: ", accessToken);
+
+//   if (!accessToken) {
+//     socket.emit("toasts", { type: "error", message: "Authentication error" });
+//     socket.disconnect(true);
+//     return;
+//     // return next(new Error("Authentication error: Token missing."));
+//   }
+
+//   jwt.verify(
+//     accessToken,
+//     process.env.ACCESS_TOKEN_SECRET,
+//     async (err, decoded) => {
+//       if (err || !decoded) {
+//         console.log(err);
+
+//         socket.emit("toasts", {
+//           type: "error",
+//           message: "Authentication error",
+//         });
+//         socket.disconnect(true);
+//         return;
+//         // return next(new Error("Authentication error: Invalid token."));
+//       }
+//       // Attach user information to the socket for further use
+//       socket.user = decoded;
+//       console.log("decoded");
+//       // username, email
+//       try {
+//         const email = socket.user.email;
+
+//         // Check if the user is already connected
+//         if (allUsers[email]) {
+//           console.log(allUsers);
+
+//           // Disconnect older socket
+//           const olderSocketID = allUsers[email].socket;
+//           const olderSocket = io.sockets.sockets.get(olderSocketID);
+//           if (olderSocket) {
+//             olderSocket.emit("force-disconnect");
+//           }
+//           console.log("allUsers");
+//         }
+
+//         // Overwrite the older socket
+//         allUsers[email] = { socket: socket.id };
+
+//         // Fetch user data from the database
+//         const userInfo = await fetchUserFromDB(email);
+//         console.log("userInfo");
+
+//         if (userInfo) {
+//           console.log("User info:", userInfo);
+//           // Emit user info to the frontend
+//           socket.emit("userInfo", userInfo);
+
+//           next(); // Proceed after successful authentication and data fetching
+//         } else {
+//           console.log("disconnect");
+
+//           socket.disconnect(true);
+//         }
+//       } catch (error) {
+//         console.error("Authentication error ", error);
+//         socket.emit("toasts", {
+//           type: "error",
+//           message: "Authentication error",
+//         });
+//         socket.disconnect(true);
+//       }
+
+//       // next();
+//     }
+//   );
+// });
+
 io.use((socket, next) => {
   const accessToken = socket.handshake.auth.accessToken;
-  console.log("access token got from client: ", accessToken);
+  console.log("Access token received from client: ", accessToken);
 
   if (!accessToken) {
-    socket.emit("toasts", { type: "error", message: "Authentication error" });
-    socket.disconnect(true);
-    return;
-    // return next(new Error("Authentication error: Token missing."));
+    return next(new Error("Authentication error: Token missing."));
   }
 
   jwt.verify(
@@ -101,26 +176,20 @@ io.use((socket, next) => {
     process.env.ACCESS_TOKEN_SECRET,
     async (err, decoded) => {
       if (err || !decoded) {
-        console.log(err);
-
-        socket.emit("toasts", {
-          type: "error",
-          message: "Authentication error",
-        });
-        socket.disconnect(true);
-        return;
-        // return next(new Error("Authentication error: Invalid token."));
+        console.error("JWT verification error:", err);
+        return next(new Error("Authentication error: Invalid token."));
       }
+
       // Attach user information to the socket for further use
       socket.user = decoded;
-      console.log("decoded");
-      // username, email
+      console.log("Decoded token:", decoded);
+
       try {
         const email = socket.user.email;
 
         // Check if the user is already connected
         if (allUsers[email]) {
-          console.log(allUsers);
+          // console.log("Existing user detected:", allUsers);
 
           // Disconnect older socket
           const olderSocketID = allUsers[email].socket;
@@ -128,7 +197,7 @@ io.use((socket, next) => {
           if (olderSocket) {
             olderSocket.emit("force-disconnect");
           }
-          console.log("allUsers");
+          console.log("Older socket disconnected for user:", email);
         }
 
         // Overwrite the older socket
@@ -136,29 +205,21 @@ io.use((socket, next) => {
 
         // Fetch user data from the database
         const userInfo = await fetchUserFromDB(email);
-        console.log("userInfo");
+        console.log("Fetched user info:", userInfo);
 
         if (userInfo) {
-          console.log("User info:", userInfo);
           // Emit user info to the frontend
           socket.emit("userInfo", userInfo);
 
           next(); // Proceed after successful authentication and data fetching
         } else {
-          console.log("disconnect");
-
-          socket.disconnect(true);
+          console.error("User not found in database, disconnecting...");
+          return next(new Error("Authentication error: User not found."));
         }
       } catch (error) {
-        console.error("Authentication error ", error);
-        socket.emit("toasts", {
-          type: "error",
-          message: "Authentication error",
-        });
-        socket.disconnect(true);
+        console.error("Error during authentication process:", error);
+        return next(new Error("Authentication error: Internal server error."));
       }
-
-      // next();
     }
   );
 });
